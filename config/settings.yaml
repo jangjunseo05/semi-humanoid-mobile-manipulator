@@ -1,0 +1,102 @@
+# semiH_web 설정 스켈레톤
+#
+# 이 파일의 값은 전부 플레이스홀더다 — 실제 값(사용자 홈 디렉터리, ROS 배포판
+# 경로 등)은 사람마다 다를 수 있으므로 여기에 실제 경로를 하드코딩하지 말고,
+# 배포 시 로컬 전용 override 파일(예: config/local_settings.yaml, .gitignore
+# 대상)로 분리하는 것을 권장한다 — so101_web의 config/local_settings.json +
+# dashboard/lib/local_config.py 패턴 참고(semiH_web/CLAUDE.md 1절 근거 참고).
+#
+# semiH_web은 이 파일에 적힌 값을 통해서만 semiH_ws를 참조한다. semiH_ws 내부
+# 파일은 절대 수정/이동/복사하지 않는다 (semiH_web/CLAUDE.md 1절 원칙).
+
+workspace:
+  # semiH_ws 워크스페이스 루트 절대경로. 이 값은 core/process_manager.py
+  # 실구현 검증(semiH_web/CLAUDE.md 2절)을 위해 이 개발 머신(WSL2
+  # Ubuntu-22.04, 사용자 jangjunseo)의 실제 경로로 채워져 있다 — 다른
+  # 머신에서 쓸 때는 로컬 override 파일로 이 값을 바꿀 것(위 안내 참고).
+  path: "/home/jangjunseo/semiH_ws"
+  # ros2 명령 실행 전에 source할 ROS 배포판 setup.bash 절대경로.
+  ros_setup_bash: "/opt/ros/humble/setup.bash"
+  # semiH_ws 자체의 install/setup.bash 절대경로 (colcon build 산출물).
+  install_setup_bash: "/home/jangjunseo/semiH_ws/install/setup.bash"
+
+bringup:
+  # bringup.launch.py의 headless 인자 기본값. mode 값 자체는 여기 설정에 자유
+  # 텍스트로 두지 않는다 — core/launch_runner.py의 enum(sim/slam/nav/explore)
+  # 으로만 고정한다 (semiH_ws/CLAUDE.md 섹션 3-1에서 확인된, 잘못된 mode 값이
+  # 조용히 sim으로 fallback되는 기존 버그를 웹 레이어에서 원천 차단하기 위함).
+  # 2026-08-29: false -> true. 이 머신의 WSLg는 GPU 가속 GL이 없어(mesa d3d12
+  # 초기화 실패 -> llvmpipe 소프트웨어 렌더) Gazebo GUI(Ogre2) 창이 화면에 안
+  # 뜨고 작업표시줄 아이콘만 남는다(semiH_web/CLAUDE.md 9절). gzserver/SLAM/Nav2/
+  # explore 는 headless로도 완전히 동작하고 시각화는 rviz2로 하면 되므로 기본을
+  # headless로 둔다. pages/main.py 환경 카드의 "Gazebo GUI 창도 띄우기" 체크박스가
+  # 이 값의 반대를 기본 선택으로 쓴다. Mesa 업그레이드(scripts/upgrade_mesa_wslg.sh)
+  # 후 Gazebo 창이 정상적으로 뜨면 이 값을 다시 false로 되돌려도 된다.
+  default_headless: true
+
+dataset:
+  # hdf5_collector_node의 output_dir 파라미터 기본값(~/semih_datasets)과 대응되는
+  # 웹 쪽 기본값. core/node_runner.py의 _default_ros_args()가 hdf5_collector_node
+  # 실행 시 --ros-args -p output_dir:=<이 값>으로 넘긴다. 이 개발 머신의 실제
+  # 경로로 채워져 있음(semiH_web/CLAUDE.md 2절과 동일한 이유).
+  output_path: "/home/jangjunseo/semih_datasets"
+
+perception:
+  # yolo_detection_node / target_3d_node의 model_name 파라미터 기본값이
+  # 'yolov8n.pt'(상대경로)라 CWD에 의존한다는 점이 semiH_ws/CLAUDE.md 섹션 2-6에
+  # 기록돼 있음. core/node_runner.py의 _default_ros_args()가 여기 절대경로를
+  # --ros-args -p model_name:=<이 값>으로 넘겨 그 의존성을 없앤다.
+  yolo_model_path: "/home/jangjunseo/semiH_ws/yolov8n.pt"
+
+logging:
+  # semiH_web 자체 로그와, launch_runner/node_runner가 띄운 subprocess의
+  # stdout/stderr 캡처 로그를 구분해서 담을 디렉터리 (semiH_web 루트 기준 상대경로).
+  web_log_dir: "logs"
+  job_log_dir: "logs/jobs"
+
+# 창을 띄우는 job(rviz2, headless=false인 gazebo GUI)에만 추가로 주입하는
+# 환경변수. headless bringup이나 ros2 run 노드(core/node_runner.py)에는 적용되지
+# 않는다 -- core/launch_runner.py의 _gui_env()가 이 블록을 읽어
+# process_manager.start_job(..., env_overlay=...)로만 넘긴다. 이 파일은 job을
+# 시작할 때마다 다시 읽으므로, 이 블록을 바꾸면 streamlit 재시작 없이 다음
+# "환경 시작"/"RViz 열기"부터 반영된다(단 이미 떠 있는 창은 끄고 다시 켜야 함).
+#
+# 왜 이 값들인가 (semiH_web/CLAUDE.md 9절 실측, 2026-08-29 재조사):
+#  - 근본 원인은 Mesa 버전이 아니라 **WSL2 ↔ Windows GPU 가상화(GPU-PV)
+#    채널이 깨져 있는 것**이다. 실측: `/dev/dri` 렌더 노드 자체가 없고,
+#    `dmesg` 에 `misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed:
+#    -22/-2`, `/mnt/wslg/stderr.log` 에 `Xwayland glamor ... falling back
+#    to sw`. 그래서 rviz2/gazebo/glxinfo 전부 llvmpipe(소프트웨어)로만
+#    돈다. RTX 5050(Blackwell) + Windows 드라이버 596.13 인데
+#    `/usr/lib/wsl/lib/libd3d12core.so` 는 2023-10-20 빌드로 너무 오래됐고
+#    WSL 쪽 NVIDIA 런타임(595.68)과 Windows 드라이버(596.13)도 불일치.
+#    => apt/Mesa 로는 못 고친다. Windows 쪽에서 `wsl --update` +
+#    NVIDIA 드라이버 클린 설치 + `wsl --shutdown` 필요.
+#    진단: `bash scripts/upgrade_mesa_wslg.sh`.
+#  - (폐기) `ppa:kisak/kisak-mesa` 의 jammy 저장소는 현재 비어 있다
+#    (Packages 인덱스 0바이트). add-apt-repository 를 해도 새 Mesa 가 안
+#    깔린다. 최신 Mesa 가 굳이 필요하면 `ppa:oibaf/graphics-drivers` 가
+#    아직 유지되지만, 위 커널 계층 문제와는 무관하다.
+#  - 아래 env는 GPU 가속이 살아나기 전까지의 "소프트웨어 렌더 안정화"용이다:
+#    드라이버를 옛 swrast(softpipe)가 아니라 llvmpipe로 고정하고 GL 버전을
+#    4.5로 올려 rviz2 창 매핑을 안정화한다(rviz2 는 이 상태에서도 창이 정상
+#    적으로 뜬다 -- 검증됨). gazebo GUI(Ogre2)는 소프트웨어로는 창 표시
+#    자체가 깨지므로(작업표시줄 아이콘만), GPU-PV 가 복구되기 전엔 bringup 을
+#    headless 로 돌리고 시각화는 rviz2 로 한다(pages/main.py 환경 카드 기본값).
+#  - QT_QPA_PLATFORM=xcb: qtwayland5 미설치라 어차피 xcb로 폴백되므로 로그
+#    노이즈만 안 남기려고 명시. GPU-PV 복구 + `apt install qtwayland5` 후엔
+#    "wayland;xcb" 로 (아래 주석 블록).
+gui_env:
+  QT_QPA_PLATFORM: "xcb"
+  LIBGL_ALWAYS_SOFTWARE: "1"
+  GALLIUM_DRIVER: "llvmpipe"
+  MESA_GL_VERSION_OVERRIDE: "4.5"
+  MESA_GLSL_VERSION_OVERRIDE: "450"
+
+# === GPU-PV 복구(scripts/upgrade_mesa_wslg.sh 의 진단이 전부 [OK]) 후 ===
+# 위 gui_env 5줄을 통째로 지우고 아래로 교체하면 GPU(d3d12) 가속 경로로
+# rviz2/Gazebo GUI가 뜬다. `sudo apt install qtwayland5` 가 전제.
+# 확인: `glxinfo -B | grep -i "OpenGL renderer"` 가 llvmpipe가 아니라
+# "D3D12 (NVIDIA GeForce RTX 5050)" 로 나오면 성공.
+# gui_env:
+#   QT_QPA_PLATFORM: "wayland;xcb"

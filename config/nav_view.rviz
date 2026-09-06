@@ -1,0 +1,68 @@
+# semiH_web이 core/launch_runner.py의 start_rviz()로 rviz2에 넘기는 시작
+# 설정 파일. semiH_ws 내부 파일이 아니라 이 프로젝트 자체의 신규 파일이다
+# (semiH_web/CLAUDE.md 1절 "semiH_ws 비수정 원칙"과 무관 -- semiH_ws를
+# 참조하지도 않음, 순수 rviz2 표시 설정).
+#
+# 목적: 빈 화면으로 열리는 rviz2에 사용자가 매번 Map/LaserScan/RobotModel/TF
+# 디스플레이를 수동으로 추가하고 Fixed Frame을 map으로 바꾸는 수고를 없애기
+# 위해 미리 채워둔 기본 구성. "2D Nav Goal"에 해당하는 SetGoal 툴도 툴바에
+# 기본 포함해 클릭 한 번으로 목표를 줄 수 있게 했다(/goal_pose 발행 -- nav2
+# bringup이 기본으로 구독하는 토픽).
+#
+# 2026-08-28: `timeout 6 rviz2 -d config/nav_view.rviz`로 라이브 로드
+# 테스트 완료 -- OpenGL 초기화 성공, YAML/디스플레이 클래스 관련 오류 없이
+# 6초간 정상 실행 후 SIGTERM으로 정상 종료됨을 확인(semiH_web/CLAUDE.md
+# 8절 참고). rviz2 자체가 사용자별 창 배치/디스플레이 추가 상태를
+# `~/.rviz2/default.rviz`에 자동 저장하므로, 사용자가 처음 실행 후 배치를
+# 조정해두면 이후 실행에도 그 조정이 유지된다(이 파일은 어디까지나
+# "최초 실행 시 빈 화면 방지"용 시작점).
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Description Topic:
+        Value: /robot_description
+      Enabled: true
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+    - Class: rviz_default_plugins/Map
+      Name: Map
+      Topic:
+        Value: /map
+      Enabled: true
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Topic:
+        Value: /scan
+      Enabled: true
+  Global Options:
+    Fixed Frame: map
+    Background Color: 48; 48; 48
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic:
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Value: /goal_pose
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+Window Geometry:
+  Height: 900
+  Width: 1400

@@ -1,0 +1,11 @@
+# semiH_web 의존성.
+#
+# so101_web(dashboard/requirements-dashboard.txt)이 Streamlit + psutil +
+# streamlit-autorefresh 조합을 썼던 것을 실제로 확인 후 그대로 따랐다
+# (C:\Users\USER\Desktop\so101_web). semiH_web은 config/settings.yaml을
+# 쓰므로 PyYAML을 추가했다.
+
+streamlit>=1.61.1
+psutil>=5.9
+PyYAML>=6.0
+streamlit-autorefresh>=1.0.1

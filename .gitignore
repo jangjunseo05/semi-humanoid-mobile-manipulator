@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 런타임 로그 / job lock (머신별 산출물, Git에 넣지 않음)
+logs/
+state/locks/
+
+# Editor/OS cruft
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
