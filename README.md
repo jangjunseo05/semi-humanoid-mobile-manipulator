@@ -1,85 +1,113 @@
-<p align="center">
-  <img src="logo.png" alt="semiH_web logo" width="120">
-</p>
+# semiH — Semi-Humanoid Mobile Manipulator
 
-<h1 align="center">semiH_web</h1>
+A ROS 2 (Humble) stack for a semi-humanoid mobile manipulator — Gazebo simulation,
+SLAM/Nav2 autonomous navigation, YOLO-based perception with analytical arm IK, and
+synchronized multimodal data collection — plus a Streamlit web dashboard
+(`semiH_web/`) that runs and monitors the whole stack without a terminal.
 
-<p align="center">
-  ROS 2 기반 세미 휴머노이드 모바일 매니퓰레이터(<code>semiH_ws</code>) 운영을 위한<br>
-  Streamlit 단일 페이지 제어/모니터링 대시보드
-</p>
+## Repository Layout
 
----
+```
+src/
+├── semih_description/      URDF/xacro robot model, Gazebo world, bringup/SLAM/Nav2/explore launch files
+├── semih_perception/       YOLO object detection, 3D target localization, analytical arm IK
+├── semih_data_collection/  Synchronized HDF5 data collection (camera, lidar, joint states, odometry)
+└── m-explore-ros2/         External dependency (frontier exploration) — not vendored, see Setup
 
-## Overview
+semiH_web/                  Streamlit dashboard that launches/stops/monitors the ROS 2 stack above
+```
 
-`semiH_web`은 별도의 ROS 2 워크스페이스(`semiH_ws`)로 존재하는 모바일 매니퓰레이터
-스택 — Gazebo 시뮬레이션, SLAM/Nav2 자율주행, YOLO 기반 인식, 뎁스 카메라 3D 좌표
-추출, IK 기반 팔 제어, HDF5 학습 데이터 수집 — 을 터미널 명령 없이 웹 UI에서
-시작/종료/모니터링할 수 있게 만든 운영 레이어입니다. `semiH_ws` 내부 파일은
-읽기 전용으로만 참조하며 절대 수정하지 않는다는 원칙 아래, `ros2 launch`/`ros2 run`
-subprocess를 바깥에서 감싸는 방식으로 동작합니다.
+## Robot Stack (`src/`)
 
-디스크에 상태를 영속화하는 lock 파일, 프로세스 그룹 단위(`os.killpg`) 종료,
-자원 충돌 감지, 좀비 프로세스 처리 등은 실제 라이브 환경(WSL2 + ROS 2 Humble)에서
-재현·검증한 결과를 바탕으로 구현했습니다.
+### `semih_description` — simulation & bringup
+A single `bringup.launch.py` entry point replaces running Gazebo, SLAM, and Nav2 in
+separate terminals, via one cumulative `mode` argument:
 
-## Key Components
+```bash
+ros2 launch semih_description bringup.launch.py mode:=sim      # Gazebo only (default)
+ros2 launch semih_description bringup.launch.py mode:=slam     # + slam_toolbox
+ros2 launch semih_description bringup.launch.py mode:=nav      # + slam_toolbox + Nav2
+ros2 launch semih_description bringup.launch.py mode:=explore  # + slam_toolbox + Nav2 + explore_lite (autonomous frontier exploration)
+```
 
-### `core/process_manager.py` — Job/Lock 관리 엔진
-- `state/locks/*.json` 파일 기반으로 실행 상태를 영속화(Streamlit 세션 상태가
-  아닌 디스크 기준이라 페이지 새로고침/서버 재시작에도 상태 유지)
-- `O_CREAT | O_EXCL` 원자적 파일 생성으로 동시 시작 요청(버튼 더블클릭 등) 레이스 방지
-- 모든 job을 `start_new_session=True`로 새 프로세스 그룹의 leader로 실행하고,
-  종료 시 `os.killpg`로 그룹 전체에 SIGINT → (timeout 시) SIGKILL 에스컬레이션
-  — 셸 래퍼(`ign gazebo`)를 통해 기동되는 손자 프로세스가 단일 PID 종료로는
-  고아로 남는 문제를 라이브로 재현 후 해결
-- stale lock 판단을 timeout이 아닌 `psutil`/`os.waitpid` 기반 PID 생존 확인으로 처리
-  (좀비 프로세스 오판 방지 포함)
-- stage별 점유 자원(`STAGE_RESOURCES`) 테이블로 자원 충돌 감지
+`mode:=explore` drives and picks its own goals with no human-provided target, and
+stops once no reachable unexplored frontier remains. One specific bug found and
+worked around during development: the robot spawns at exactly `(0,0)`, which sits on
+the edge of the initial SLAM-derived costmap, so `explore_lite`'s first frontier
+search fails immediately and does not retry. The launch file compensates with a short
+automatic forward nudge ~20s after startup to move the robot off that exact boundary
+coordinate before exploration starts (a pure rotation doesn't fix it — it has to be
+linear motion).
 
-### `core/launch_runner.py` — Bringup / RViz / 인식 결과 뷰어
-- `ros2 launch semih_description bringup.launch.py`를 `sim` / `slam` / `nav` /
-  `explore` 4단계 누적 모드로 감싸며, 원본 launch 파일에 없는 모드 값 검증을
-  Enum으로 웹 레이어에서 강제(원본은 잘못된 값이 조용히 `sim`으로 폴백되는 버그 존재)
-- Nav2 목표 지점을 지정할 UI가 없는 문제를 해결하기 위해 RViz2를 독립적으로
-  띄우는 버튼 추가, YOLO 인식 결과(`/yolo/image_annotated`)를 바로 볼 수 있는
-  `rqt_image_view` 뷰어 버튼 추가
-- WSLg GPU 가속 미지원 환경을 위한 소프트웨어 렌더링 환경변수 주입(`gui_env`)
+### `semih_perception` — perception & arm control
+- `yolo_detection_node` — YOLOv8 (Ultralytics) object detection
+- `target_3d_node` — depth-camera 3D coordinate extraction for a detected target
+- `arm_reach_node` — analytical inverse kinematics to reach the localized target
 
-### `core/node_runner.py` — 독립 인식/수집 노드 실행
-- launch 파일이 없는 4개 `ros2 run` 노드(`yolo_detection_node`, `target_3d_node`,
-  `arm_reach_node`, `hdf5_collector_node`)를 개별 시작/종료
-- 라이브 테스트로 노드별 락 정책을 다르게 적용: `hdf5_collector`는 파일명 충돌로
-  인한 데이터 유실이 실측 확인되어 단일 인스턴스 하드 락, 나머지 3개는 중복
-  실행이 안전함을 확인하여 인스턴스별 고유 키로 복수 실행 허용
+### `semih_data_collection` — dataset recording
+- `hdf5_collector_node` — synchronizes camera, lidar, joint-state, and odometry
+  topics (via `message_filters`) into HDF5 files for imitation-learning-style datasets.
+  `hdf5_to_lerobot.py` (repo root) converts the recorded HDF5 output into LeRobot
+  dataset format.
 
-### `monitoring/topic_watcher.py` — 상태 집계
-- `launch_runner`/`node_runner`의 상태를 하나의 dict로 통합해 UI가 쓰기 좋게 제공
-- 프로세스 생존 여부와 실제 토픽 발행 여부(ROS 그래프 수준 헬스체크)를 구분하며,
-  후자는 범위를 명시한 TODO로 남겨둠
+## Web Dashboard (`semiH_web/`)
 
-### `pages/main.py` / `lib/ui_components.py` — Streamlit UI
-- 환경(bringup) 카드, 인식 파이프라인(YOLO → 3D 좌표 추출 → 팔 뻗기) 카드,
-  데이터 수집 카드로 구성된 단일 페이지 대시보드
-- 현재 시스템 상태를 해석해 다음에 눌러야 할 동작을 안내하는 동적 CTA
-- 역할 기반 카드 색상(action/settings/success/warning), 모드/노드별 설명 popover,
-  최초 사용자용 가이드 탭, 브랜드 스플래시 화면
+A single-page Streamlit app that wraps the `ros2 launch`/`ros2 run` processes above
+so the stack can be started, stopped, and monitored from a browser instead of 4-5
+terminals. `semiH_web` only ever reads from the robot stack above — it never modifies
+files under `src/`.
 
-### `scripts/upgrade_mesa_wslg.sh`
-- WSL2(WSLg) 환경에서 Gazebo/RViz GUI 창이 뜨지 않는 문제의 원인(GPU-PV 가상화
-  채널 불능)을 진단하는 스크립트
+- **`core/process_manager.py`** — job/lock engine. Persists run state to
+  `state/locks/*.json` on disk (survives page reloads / server restarts, not just
+  Streamlit session state); uses atomic `O_CREAT | O_EXCL` file creation to prevent
+  race conditions from duplicate start requests; runs every job as the leader of a
+  new process group (`start_new_session=True`) and tears it down with `os.killpg`
+  (SIGINT → SIGKILL on timeout) so grandchild processes spawned through shell
+  wrappers (e.g. `ign gazebo`) don't end up orphaned; treats a lock as stale based on
+  actual PID liveness (`psutil`/`os.waitpid`), not a timeout, to avoid misjudging
+  zombie processes; and flags resource conflicts via a per-stage `STAGE_RESOURCES`
+  table.
+- **`core/launch_runner.py`** — wraps `bringup.launch.py`'s four modes with web-layer
+  enum validation (the underlying launch file silently falls back to `sim` on an
+  invalid mode value), adds a standalone RViz2 launcher (there's no UI for setting
+  Nav2 goals otherwise) and an `rqt_image_view` button for the YOLO-annotated image
+  topic, and injects software-rendering environment variables for WSLg setups without
+  GPU acceleration.
+- **`core/node_runner.py`** — starts/stops the four `ros2 run` nodes that have no
+  launch file of their own. Lock policy differs per node based on observed behavior:
+  `hdf5_collector` gets a hard single-instance lock after a confirmed data-loss bug
+  from filename collisions on concurrent runs; the other three allow multiple
+  instances under distinct keys since concurrent runs were verified safe.
+- **`monitoring/topic_watcher.py`** — merges `launch_runner`/`node_runner` state into
+  one dict for the UI, distinguishing process liveness from actual topic publication
+  (the latter is a scoped TODO).
+- **`pages/main.py` / `lib/ui_components.py`** — the dashboard itself: an environment
+  (bringup) card, a perception pipeline card (YOLO → 3D localization → arm reach),
+  and a data-collection card, with state-aware call-to-action prompts and a
+  first-run guide tab.
+
+## Setup
+
+1. **ROS 2 workspace** (requires ROS 2 Humble):
+   ```bash
+   cd src && git clone https://github.com/robo-friends/m-explore-ros2.git  # frontier exploration dependency, not vendored
+   cd .. && colcon build
+   ```
+2. **YOLO weights**: place `yolov8n.pt` (Ultralytics YOLOv8n) at the workspace root —
+   referenced by `semiH_web/config/settings.yaml` → `yolo_model_path`.
+3. **Web dashboard**:
+   ```bash
+   cd semiH_web && pip install -r requirements.txt
+   streamlit run pages/main.py
+   ```
+   `semiH_web/config/settings.yaml` holds the workspace path and other machine-level
+   settings — update it if the workspace lives somewhere other than the path baked in
+   during development.
 
 ## Tech Stack
 
-- **Web/App**: Python, Streamlit, streamlit-autorefresh, PyYAML, psutil, Pillow
-- **Robotics**: ROS 2 Humble, Gazebo, slam_toolbox, Nav2, explore_lite, RViz2, rqt_image_view
-- **Perception**: YOLOv8(Ultralytics) 기반 객체 탐지, 뎁스 카메라 3D 좌표 변환
-- **Data**: HDF5(h5py) 기반 센서/관절 상태 동기 수집
-- **Runtime**: WSL2(Ubuntu 22.04) 위에서 `subprocess` 기반 프로세스 그룹 관리
-
----
-
-> 이 저장소는 `semiH_ws`(로봇 URDF 모델링, Gazebo 월드, 인식/제어 노드 구현,
-> launch 파일 등 실제 로봇 스택)를 수정하지 않고 바깥에서 운영/모니터링하는
-> 웹 레이어만을 포함합니다.
+- **Robotics**: ROS 2 Humble, Gazebo, slam_toolbox, Nav2, explore_lite, RViz2
+- **Perception**: YOLOv8 (Ultralytics), depth-camera 3D localization, analytical IK
+- **Data**: HDF5 (h5py) synchronized multimodal recording, LeRobot format conversion
+- **Dashboard**: Python, Streamlit, PyYAML, psutil, Pillow
+- **Runtime**: WSL2 (Ubuntu 22.04), `subprocess`-based process-group management
