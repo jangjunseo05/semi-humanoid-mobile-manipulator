@@ -1,0 +1,42 @@
+slam_toolbox:
+  ros__parameters:
+    # Plugin params
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: None
+
+    # ROS Parameters
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link   # our URDF has no base_footprint, only base_link
+    scan_topic: /scan
+    use_map_saver: true
+    mode: mapping
+
+    debug_logging: false
+    throttle_scans: 1
+    transform_publish_period: 0.02
+    map_update_interval: 1.0
+    resolution: 0.05
+    # Package defaults are 0.5m / 0.5rad: slam_toolbox only integrates a new
+    # scan into the map after the robot has moved that much since the last
+    # one. bringup.launch.py's one-shot priming nudge (~0.4-0.5m, no
+    # rotation) crosses this threshold at most once, so the map ends up
+    # frozen at just one or two thin scan-line slivers (measured: 479 free
+    # cells out of 28620, i.e. ~1.7% known) instead of the much larger area
+    # actually visible to the 10m-range lidar from that pose. explore_lite
+    # then only ever finds "frontiers" a few centimeters from the robot
+    # (right at the edge of those slivers), which Nav2 reports as instantly
+    # reached with no real motion -- so the map never grows and exploration
+    # looks permanently stuck. Lowering these lets small/incremental motion
+    # (including in-place rotation) keep feeding the map.
+    minimum_travel_distance: 0.1
+    minimum_travel_heading: 0.1
+    max_laser_range: 10.0
+    minimum_time_interval: 0.1
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.0
+    stack_size_to_use: 40000000

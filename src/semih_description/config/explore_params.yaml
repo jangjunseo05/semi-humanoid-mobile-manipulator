@@ -1,0 +1,24 @@
+/**:
+  ros__parameters:
+    robot_base_frame: base_link
+    return_to_init: true
+    # Tried /global_costmap/costmap first (theory: always robot-centered, unlike the
+    # raw growing SLAM map). That backfired -- in this setup /global_costmap/costmap
+    # never delivered a single message to a subscriber, volatile or transient_local,
+    # confirmed via direct rclpy probes, for reasons not fully root-caused. slam_toolbox's
+    # raw /map is the one topic proven reliable all session (Nav2 itself plans off it),
+    # so use that -- combined with the forward-priming nudge in bringup.launch.py to
+    # get the robot off the exact spawn-point boundary coordinate before the first
+    # frontier search (see that file's docstring).
+    costmap_topic: map
+    costmap_updates_topic: map_updates
+    visualize: true
+    planner_frequency: 0.15
+    progress_timeout: 30.0
+    potential_scale: 3.0
+    orientation_scale: 0.0
+    gain_scale: 1.0
+    transform_tolerance: 0.3
+    # Package default 0.75m; our world is an ~8x8m maze, so a smaller minimum
+    # frontier size finds more (smaller) unexplored pockets worth visiting.
+    min_frontier_size: 0.4

@@ -1,0 +1,367 @@
+<?xml version="1.0"?>
+<robot name="semih" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ================= Properties ================= -->
+  <xacro:property name="base_length" value="0.4"/>
+  <xacro:property name="base_width"  value="0.3"/>
+  <xacro:property name="base_height" value="0.15"/>
+  <xacro:property name="wheel_radius" value="0.05"/>
+  <xacro:property name="wheel_width"  value="0.04"/>
+  <xacro:property name="wheel_separation" value="0.35"/>
+
+  <!-- These four values (plus base_height above) are duplicated as ROS parameter
+       defaults in semih_perception/arm_reach_node.py (base_height, arm_link1_len,
+       arm_link2_len, arm_link3_len params) since the analytical IK there needs them
+       as plain numbers, not xacro expressions. If you change the arm geometry here,
+       update those parameter defaults (or override them via launch) to match. -->
+  <xacro:property name="arm_link1_len" value="0.20"/>
+  <xacro:property name="arm_link2_len" value="0.25"/>
+  <xacro:property name="arm_link3_len" value="0.15"/>
+  <xacro:property name="link_radius" value="0.02"/>
+
+  <material name="grey">
+    <color rgba="0.6 0.6 0.6 1"/>
+  </material>
+  <material name="orange">
+    <color rgba="0.9 0.4 0.1 1"/>
+  </material>
+  <material name="black">
+    <color rgba="0.1 0.1 0.1 1"/>
+  </material>
+
+  <!-- ================= Base ================= -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="5.0"/>
+      <inertia ixx="0.05" ixy="0" ixz="0" iyy="0.06" iyz="0" izz="0.08"/>
+    </inertial>
+  </link>
+
+  <!-- ================= Wheels (differential drive) ================= -->
+  <xacro:macro name="wheel" params="prefix y_pos">
+    <link name="${prefix}_wheel_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.5"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel_link"/>
+      <origin xyz="-0.1 ${y_pos} -${base_height/2}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:wheel prefix="left"  y_pos="${wheel_separation/2}"/>
+  <xacro:wheel prefix="right" y_pos="-${wheel_separation/2}"/>
+
+  <!-- Caster (passive, fixed for simplicity in this first test) -->
+  <link name="caster_wheel_link">
+    <visual>
+      <geometry>
+        <sphere radius="${wheel_radius*0.7}"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="${wheel_radius*0.7}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0005" ixy="0" ixz="0" iyy="0.0005" iyz="0" izz="0.0005"/>
+    </inertial>
+  </link>
+
+  <joint name="caster_wheel_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_wheel_link"/>
+    <origin xyz="0.15 0 -${base_height/2}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================= Arm (3 DOF, simplified geometry) ================= -->
+  <link name="arm_link1">
+    <visual>
+      <origin xyz="0 0 ${arm_link1_len/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link_radius}" length="${arm_link1_len}"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${arm_link1_len/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link_radius}" length="${arm_link1_len}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.3"/>
+      <inertia ixx="0.0005" ixy="0" ixz="0" iyy="0.0005" iyz="0" izz="0.0002"/>
+    </inertial>
+  </link>
+
+  <joint name="arm_joint1" type="revolute">
+    <parent link="base_link"/>
+    <child link="arm_link1"/>
+    <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14" upper="3.14" effort="10" velocity="1.0"/>
+  </joint>
+
+  <link name="arm_link2">
+    <visual>
+      <origin xyz="0 0 ${arm_link2_len/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link_radius}" length="${arm_link2_len}"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${arm_link2_len/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link_radius}" length="${arm_link2_len}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.25"/>
+      <inertia ixx="0.0004" ixy="0" ixz="0" iyy="0.0004" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="arm_joint2" type="revolute">
+    <parent link="arm_link1"/>
+    <child link="arm_link2"/>
+    <origin xyz="0 0 ${arm_link1_len}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.57" upper="1.57" effort="10" velocity="1.0"/>
+  </joint>
+
+  <link name="arm_link3">
+    <visual>
+      <origin xyz="0 0 ${arm_link3_len/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link_radius*0.8}" length="${arm_link3_len}"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${arm_link3_len/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${link_radius*0.8}" length="${arm_link3_len}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.15"/>
+      <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.00005"/>
+    </inertial>
+  </link>
+
+  <joint name="arm_joint3" type="revolute">
+    <parent link="arm_link2"/>
+    <child link="arm_link3"/>
+    <origin xyz="0 0 ${arm_link2_len}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.57" upper="1.57" effort="10" velocity="1.0"/>
+  </joint>
+
+  <!-- ================= Camera ================= -->
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.05 0.03"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.03 0.05 0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <!-- Mounted on the front-top edge of the base, facing forward (+x) -->
+    <origin xyz="0.2 0 ${base_height/2 + 0.02}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================= Lidar ================= -->
+  <link name="lidar_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.04" length="0.05"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.04" length="0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <!-- Mounted on top-center of the base -->
+    <origin xyz="0 0 ${base_height/2 + 0.03}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================= ros2_control ================= -->
+  <ros2_control name="semih_arm_system" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="arm_joint1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="arm_joint2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="arm_joint3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+  <!-- ================= Gazebo plugins ================= -->
+  <gazebo>
+    <plugin filename="libignition-gazebo-diff-drive-system.so" name="ignition::gazebo::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>${wheel_separation}</wheel_separation>
+      <wheel_radius>${wheel_radius}</wheel_radius>
+      <odom_publish_frequency>30</odom_publish_frequency>
+      <topic>cmd_vel</topic>
+      <odom_topic>odom</odom_topic>
+      <tf_topic>/model/semih/tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_link</child_frame_id>
+    </plugin>
+
+    <!-- No update_rate here defaults to roughly the physics step rate (measured ~878Hz),
+         which floods /joint_states and overflows any downstream message_filters sync queue.
+         This was the actual root cause of hdf5_collector_node never producing synced frames,
+         not CPU load or QoS. Bounding it well below controller_manager's 100Hz fixes that. -->
+    <plugin filename="libignition-gazebo-joint-state-publisher-system.so" name="ignition::gazebo::systems::JointStatePublisher">
+      <update_rate>30</update_rate>
+    </plugin>
+
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find semih_description)/config/semih_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+  <!-- Camera sensor definition (Fortress/Ignition native sensor, no extra plugin needed) -->
+  <gazebo reference="camera_link">
+    <sensor name="front_camera" type="camera">
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+      <topic>camera/image_raw</topic>
+    </sensor>
+  </gazebo>
+
+  <!-- Lidar sensor definition (2D planar scan, gpu_lidar type for Ignition Fortress) -->
+  <gazebo reference="lidar_link">
+    <sensor name="lidar" type="gpu_lidar">
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>10</update_rate>
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <topic>scan</topic>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.12</min>
+          <max>10.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+    </sensor>
+  </gazebo>
+
+  <!-- Depth camera, co-located with the RGB camera (camera_link), same FOV/resolution,
+       so pixel coordinates line up between the two for target 3D coordinate extraction. -->
+  <gazebo reference="camera_link">
+    <sensor name="depth_camera" type="depth_camera">
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R_FLOAT32</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <visualize>false</visualize>
+      <topic>depth_camera</topic>
+    </sensor>
+  </gazebo>
+
+</robot>

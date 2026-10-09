@@ -1,0 +1,141 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="semih_world">
+
+    <!-- Required for the physics engine -->
+    <plugin filename="libignition-gazebo-physics-system.so" name="ignition::gazebo::systems::Physics">
+    </plugin>
+
+    <!-- Required for camera/lidar/etc. sensor rendering -->
+    <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Required for spawning/deleting entities, joint control, etc. -->
+    <plugin filename="libignition-gazebo-user-commands-system.so" name="ignition::gazebo::systems::UserCommands">
+    </plugin>
+
+    <!-- Required to broadcast scene info (needed for the GUI and for ros_gz_sim create) -->
+    <plugin filename="libignition-gazebo-scene-broadcaster-system.so" name="ignition::gazebo::systems::SceneBroadcaster">
+    </plugin>
+
+    <!-- Optional but useful: contact/collision reporting -->
+    <plugin filename="libignition-gazebo-contact-system.so" name="ignition::gazebo::systems::Contact">
+    </plugin>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Lightweight maze made of simple static wall boxes (no meshes, cheap to render).
+         Walls are 2m tall, 0.1m thick. Layout forms a small loop + a couple of dead ends,
+         roughly 8m x 8m, centered a few meters in front of the robot's spawn point. -->
+    <model name="maze_wall_1">
+      <static>true</static>
+      <pose>4 -3 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.1 6 2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.1 6 2</size></box></geometry>
+          <material><ambient>0.6 0.6 0.65 1</ambient><diffuse>0.6 0.6 0.65 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="maze_wall_2">
+      <static>true</static>
+      <pose>4 3.05 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>4 0.1 2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>4 0.1 2</size></box></geometry>
+          <material><ambient>0.6 0.6 0.65 1</ambient><diffuse>0.6 0.6 0.65 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="maze_wall_3">
+      <static>true</static>
+      <pose>8 0 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.1 6 2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.1 6 2</size></box></geometry>
+          <material><ambient>0.6 0.6 0.65 1</ambient><diffuse>0.6 0.6 0.65 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="maze_wall_4">
+      <static>true</static>
+      <pose>4 -6 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>8 0.1 2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>8 0.1 2</size></box></geometry>
+          <material><ambient>0.6 0.6 0.65 1</ambient><diffuse>0.6 0.6 0.65 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="maze_wall_5">
+      <static>true</static>
+      <pose>6 -1.5 1 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.1 3 2</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.1 3 2</size></box></geometry>
+          <material><ambient>0.6 0.6 0.65 1</ambient><diffuse>0.6 0.6 0.65 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- COCO-class objects from Gazebo Fuel, for standard-YOLO recognition testing
+         (no fine-tuning needed since these are classes the pretrained model already knows). -->
+    <include>
+      <name>chair_1</name>
+      <pose>2 1 0 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Chair</uri>
+    </include>
+
+    <include>
+      <name>backpack_1</name>
+      <pose>3 -1 0 0 0 0.5</pose>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/JanSport%20Backpack%20Red</uri>
+    </include>
+
+    <include>
+      <name>suitcase_1</name>
+      <pose>5 1.5 0 0 0 -0.8</pose>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Suitcase2H</uri>
+    </include>
+
+  </world>
+</sdf>

@@ -1,14 +1,26 @@
+# colcon build artifacts (regenerate with `colcon build`)
+build/
+install/
+log/
+
+# vendored third-party package (clone separately, see README)
+src/m-explore-ros2/
+
+# model weights (download separately, see README)
+yolov8n.pt
+
 # Python
 __pycache__/
 *.pyc
 *.pyo
 
-# 런타임 로그 / job lock (머신별 산출물, Git에 넣지 않음)
-logs/
-state/locks/
+# semiH_web runtime artifacts (machine-specific)
+semiH_web/logs/
+semiH_web/state/locks/
 
 # Editor/OS cruft
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+*:Zone.Identifier

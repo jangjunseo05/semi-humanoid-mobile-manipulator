@@ -1,0 +1,22 @@
+- ros_topic_name: "joint_states"
+  gz_topic_name: "/world/semih_world/model/semih/joint_state"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_type_name: "ignition.msgs.Model"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "odom"
+  # Must match <odom_topic> in the DiffDrive plugin (semih.urdf.xacro), which is "odom"
+  # (a plain gz topic, not "/model/semih/odometry"). The mismatch here meant this bridge
+  # was listening to a gz topic nothing ever published to -- /odom existed on the ROS side
+  # but never carried a single message. TF worked throughout because tf_topic below was
+  # already correctly named, which is why Nav2 (TF-based) succeeded while raw /odom didn't.
+  gz_topic_name: "/odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "ignition.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "tf"
+  gz_topic_name: "/model/semih/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "ignition.msgs.Pose_V"
+  direction: GZ_TO_ROS
