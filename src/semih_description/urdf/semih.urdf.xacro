@@ -103,8 +103,22 @@
   <joint name="caster_wheel_joint" type="fixed">
     <parent link="base_link"/>
     <child link="caster_wheel_link"/>
-    <origin xyz="0.15 0 -${base_height/2}" rpy="0 0 0"/>
+    <!-- Caster bottom must sit at the same height as the drive wheels' bottom
+         (-(base_height/2 + wheel_radius)). It used to be centered at -base_height/2 with
+         radius 0.7*wheel_radius, i.e. 1.5cm higher than the wheels, so the base pitched
+         ~3.4 deg nose-down and the forward lidar rays hit the floor ~3.3m ahead. That showed
+         up in /scan as a phantom wall and smeared the SLAM map. -->
+    <origin xyz="0.15 0 -${base_height/2 + wheel_radius - wheel_radius*0.7}" rpy="0 0 0"/>
   </joint>
+
+  <!-- The caster is a fixed sphere, so with default friction it drags on the floor and the
+       drive wheels slip whenever the robot turns. Measured before this fix: a commanded 360 deg
+       in-place spin turned the robot only ~209 deg in Gazebo while /odom reported ~340 deg,
+       which smeared the SLAM map. Frictionless contact makes it behave like a free caster. -->
+  <gazebo reference="caster_wheel_link">
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
+  </gazebo>
 
   <!-- ================= Arm (3 DOF, simplified geometry) ================= -->
   <link name="arm_link1">

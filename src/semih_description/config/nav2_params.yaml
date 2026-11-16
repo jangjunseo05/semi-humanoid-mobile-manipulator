@@ -130,7 +130,10 @@ local_costmap:
           raytrace_max_range: 10.0
           raytrace_min_range: 0.0
           obstacle_max_range: 8.0
-          obstacle_min_range: 0.0
+          # The lidar sits at the base center and sees the robot's own arm ~0.19m ahead.
+          # Without a min range that self-hit is marked as an obstacle right in front of the
+          # robot (and left behind as a dotted trail), so the planner fails from the start.
+          obstacle_min_range: 0.3
       always_send_full_costmap: true
 
 global_costmap:
@@ -160,7 +163,7 @@ global_costmap:
           raytrace_max_range: 10.0
           raytrace_min_range: 0.0
           obstacle_max_range: 8.0
-          obstacle_min_range: 0.0
+          obstacle_min_range: 0.3   # ignore the robot's own arm (see local_costmap)
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true

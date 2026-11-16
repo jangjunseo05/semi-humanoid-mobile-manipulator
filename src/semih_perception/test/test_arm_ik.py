@@ -16,16 +16,29 @@ GEOM = dict(
 )
 
 
-def test_reachable_target_is_not_clamped():
-    # (0.3, 0.0, 0.35): confirmed against a real Gazebo run on 2026-08-04 --
-    # arm_reach_node computed joints=(0, 43, -90) deg and the arm physically
-    # moved to that pose (see semiH_troubleshooting_log.md and session notes).
-    joint1, joint2, joint3, was_clamped = solve_ik(0.3, 0.0, 0.35, **GEOM)
+def forward_kinematics(joint1, joint2, joint3, g=GEOM):
+    """Tip position in base_link, from semih.urdf.xacro: arm_joint1 yaws about z at the
+    top of the base, arm_joint2/3 pitch about +y, every link extends along its +z."""
+    l2, l3 = g['arm_link2_len'], g['arm_link3_len']
+    r = l2 * math.sin(joint2) + l3 * math.sin(joint2 + joint3)
+    z = g['base_height'] / 2 + g['arm_link1_len'] + l2 * math.cos(joint2) + l3 * math.cos(joint2 + joint3)
+    return r * math.cos(joint1), r * math.sin(joint1), z
 
+
+@pytest.mark.parametrize('target', [
+    (0.35, 0.0, 0.35),
+    (0.30, 0.15, 0.30),
+    (0.25, -0.20, 0.45),
+    (0.38, 0.0, 0.22),
+    (0.15, 0.30, 0.40),
+])
+def test_tip_reaches_target(target):
+    # The previous regression-only test checked joint numbers from an earlier run and
+    # never ran FK, so an elbow sign error (tip ~30cm off every target) went unnoticed.
+    joint1, joint2, joint3, was_clamped = solve_ik(*target, **GEOM)
     assert was_clamped is False
-    assert math.degrees(joint1) == pytest.approx(0.0, abs=1.0)
-    assert math.degrees(joint2) == pytest.approx(43.0, abs=1.0)
-    assert math.degrees(joint3) == pytest.approx(-90.0, abs=1.0)
+    tip = forward_kinematics(joint1, joint2, joint3)
+    assert math.dist(tip, target) < 0.01
 
 
 def test_out_of_range_target_gets_clamped():
@@ -34,7 +47,7 @@ def test_out_of_range_target_gets_clamped():
 
     assert was_clamped is True
     # A clamped target should saturate the elbow toward full extension.
-    assert joint3 == pytest.approx(-GEOM['joint23_limit'], abs=0.05) or joint3 == pytest.approx(0.0, abs=0.05)
+    assert joint3 == pytest.approx(0.0, abs=0.05)
 
 
 def test_yaw_points_toward_target():

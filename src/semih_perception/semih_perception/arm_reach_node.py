@@ -68,16 +68,21 @@ def solve_ik(tx, ty, tz, *, base_height, arm_link1_len, arm_link2_len, arm_link3
     if was_clamped:
         D = max_reach
 
-    cos_interior = (D * D - arm_link2_len**2 - arm_link3_len**2) / (2 * arm_link2_len * arm_link3_len)
-    cos_interior = clamp(cos_interior, -1.0, 1.0)
-    interior = math.acos(cos_interior)   # angle between link2 and link3, pi = fully extended
+    # Law of cosines gives the elbow *bend* directly (0 = fully extended, not the angle
+    # between the links). The previous version treated this value as the inter-link angle
+    # and then used -(pi - angle) for joint3, so the tip missed every target by ~30cm
+    # (caught by forward kinematics in test/test_arm_ik.py::test_tip_reaches_target).
+    cos_bend = (D * D - arm_link2_len**2 - arm_link3_len**2) / (2 * arm_link2_len * arm_link3_len)
+    bend = math.acos(clamp(cos_bend, -1.0, 1.0))
 
-    joint3 = -(math.pi - interior)  # elbow bend, 0 = straight, negative = folding "up/back"
+    # Positive bend = elbow-down solution, which keeps joint2 within its +-90 deg limit
+    # for targets in front of the robot.
+    joint3 = bend
 
     phi_target = math.atan2(r, dz)  # angle from vertical (+Z) toward the target
     alpha = math.atan2(
-        arm_link3_len * math.sin(math.pi - interior),
-        arm_link2_len + arm_link3_len * math.cos(math.pi - interior),
+        arm_link3_len * math.sin(bend),
+        arm_link2_len + arm_link3_len * math.cos(bend),
     )
     joint2 = phi_target - alpha
 
