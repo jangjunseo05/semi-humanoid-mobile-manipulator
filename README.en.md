@@ -46,7 +46,8 @@ linear motion).
 - `target_approach_node` — stores a target detected from afar in the odom frame, drives to a
   reachable standoff (0.33 m horizontal) and then hands the stored point to the arm, since
   detection becomes unreliable up close. In Gazebo the tip stopped about 2 cm short of the
-  backpack surface (not confirmed with a contact sensor; YOLO confidence threshold 0.2). No
+  backpack surface in 9 of 10 runs under identical conditions (not confirmed with a contact
+  sensor; YOLO confidence threshold 0.2). No
   grasping. See `docs/usage_guide.md` section 4.
 
 ### `semih_data_collection` — dataset recording

@@ -44,8 +44,8 @@ frontier 탐색이 바로 실패하고 다시 시도하지 않습니다. 그래�
 - `arm_reach_node` — 위치를 구한 목표에 팔을 뻗는 해석적 역기구학(IK)
 - `target_approach_node` — 멀리서 검출한 목표 좌표를 odom에 저장하고, 팔이 닿는 거리(수평 0.33m)까지
   주행한 뒤 그 좌표를 팔에 넘깁니다. 가까이 가면 검출이 불안정해지는 문제를 피하기 위한 구성입니다.
-  Gazebo에서 가방 표면 앞 약 2cm까지 도달한 것을 확인했습니다(접촉 센서로는 미확인, YOLO 신뢰도
-  임계값 0.2 조건). 물체를 잡는(grasp) 기능은 없습니다. 사용법은 `docs/usage_guide.md` 4절.
+  Gazebo에서 같은 조건 10회 중 9회, 가방 표면 앞 약 2cm까지 도달했습니다(접촉 센서로는 미확인,
+  YOLO 신뢰도 임계값 0.2 조건). 물체를 잡는(grasp) 기능은 없습니다. 사용법은 `docs/usage_guide.md` 4절.
 
 ### `semih_data_collection` — 데이터셋 녹화
 - `hdf5_collector_node` — 카메라, 라이다, 관절 상태, 오도메트리 토픽을 `message_filters`로
