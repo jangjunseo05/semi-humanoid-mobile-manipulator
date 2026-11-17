@@ -10,7 +10,7 @@ GEOM = dict(
     base_height=0.15,
     arm_link1_len=0.20,
     arm_link2_len=0.25,
-    arm_link3_len=0.15,
+    arm_link3_len=0.21,
     joint1_limit=3.14,
     joint23_limit=1.57,
 )
@@ -42,12 +42,35 @@ def test_tip_reaches_target(target):
 
 
 def test_out_of_range_target_gets_clamped():
-    # 2m away is far beyond the 0.40m max reach (arm_link2_len + arm_link3_len).
+    # 2m away is far beyond the 0.46m max reach (arm_link2_len + arm_link3_len).
     _, joint2, joint3, was_clamped = solve_ik(2.0, 0.0, 0.35, **GEOM)
 
     assert was_clamped is True
     # A clamped target should saturate the elbow toward full extension.
     assert joint3 == pytest.approx(0.0, abs=0.05)
+
+
+@pytest.mark.parametrize('r', [0.31, 0.33, 0.35])
+def test_backpack_height_reachable_at_standoff(r):
+    # Measured backpack target was base_link z=0.10 (2026-11-16 run). target_approach_node
+    # stops 0.33m away (horizontal); the tip must reach that height around the standoff.
+    target = (r, 0.0, 0.10)
+    joint1, joint2, joint3, was_clamped = solve_ik(*target, **GEOM)
+    assert was_clamped is False
+    assert math.dist(forward_kinematics(joint1, joint2, joint3), target) < 0.01
+
+
+def test_backpack_from_old_detection_distance_is_flagged():
+    # The 2026-11-16 run reached for (0.54, 0, 0.10) directly; still beyond reach.
+    *_, was_clamped = solve_ik(0.54, 0.0, 0.10, **GEOM)
+    assert was_clamped is True
+
+
+def test_below_joint_limit_target_is_flagged():
+    # Within max reach but needs joint2 past +90 deg (elbow below the shoulder): used to
+    # be clamped silently and reported as reachable.
+    *_, was_clamped = solve_ik(0.25, 0.0, 0.0, **GEOM)
+    assert was_clamped is True
 
 
 def test_yaw_points_toward_target():

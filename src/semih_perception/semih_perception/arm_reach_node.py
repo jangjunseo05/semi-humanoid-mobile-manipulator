@@ -14,7 +14,7 @@ simple analytical inverse kinematics problem for our 3-DOF arm:
 The resulting joint angles are sent as a FollowJointTrajectory goal to the
 arm_controller action server (the same one we tested manually earlier).
 
-This is a best-effort/demo IK -- our arm's reach is small (~0.4m) and the
+This is a best-effort/demo IK -- our arm's reach is small (~0.46m) and the
 joint limits are fairly tight, so many target points will be out of range;
 those get clamped to the closest reachable pose rather than rejected outright.
 """
@@ -49,7 +49,9 @@ def solve_ik(tx, ty, tz, *, base_height, arm_link1_len, arm_link2_len, arm_link3
     so it can be unit-tested directly -- see test/test_arm_ik.py.
 
     Returns (joint1, joint2, joint3, was_clamped), where was_clamped is True if
-    the target was farther than the arm's max reach and got clamped.
+    the target was farther than the arm's max reach, or the solution needed a joint
+    beyond its limit (e.g. a target below the lowest point the elbow-down pose
+    reaches); in both cases the commanded pose does not reach the target.
     """
     # 1) Yaw: horizontal direction to the target.
     joint1 = math.atan2(ty, tx)
@@ -86,6 +88,10 @@ def solve_ik(tx, ty, tz, *, base_height, arm_link1_len, arm_link2_len, arm_link3
     )
     joint2 = phi_target - alpha
 
+    # Before this check, a target within max_reach but outside the joint limits was
+    # silently clamped and reported as reachable (the arm stopped short with no warning).
+    if abs(joint2) > joint23_limit or abs(joint3) > joint23_limit:
+        was_clamped = True
     joint2 = clamp(joint2, -joint23_limit, joint23_limit)
     joint3 = clamp(joint3, -joint23_limit, joint23_limit)
 
@@ -103,7 +109,7 @@ class ArmReachNode(Node):
         self.declare_parameter('base_height', 0.15)
         self.declare_parameter('arm_link1_len', 0.20)
         self.declare_parameter('arm_link2_len', 0.25)
-        self.declare_parameter('arm_link3_len', 0.15)
+        self.declare_parameter('arm_link3_len', 0.21)
         self.declare_parameter('joint1_limit', 3.14)
         self.declare_parameter('joint23_limit', 1.57)
 
@@ -164,7 +170,7 @@ class ArmReachNode(Node):
         )
         if was_clamped:
             self.get_logger().warn(
-                f'Target ({tx:.2f},{ty:.2f},{tz:.2f}) is out of reach, clamping to max reach.',
+                f'Target ({tx:.2f},{ty:.2f},{tz:.2f}) is out of reach, clamping to the nearest pose.',
                 throttle_duration_sec=2.0,
             )
 
@@ -195,7 +201,6 @@ class ArmReachNode(Node):
         point.positions = [joint1, joint2, joint3]
         point.time_from_start = Duration(sec=2, nanosec=0)
         goal.trajectory.points = [point]
-
         future = self.action_client.send_goal_async(goal)
         future.add_done_callback(self._goal_response_callback)
 

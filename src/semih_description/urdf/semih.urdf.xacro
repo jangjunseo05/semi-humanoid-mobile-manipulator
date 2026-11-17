@@ -16,7 +16,11 @@
        update those parameter defaults (or override them via launch) to match. -->
   <xacro:property name="arm_link1_len" value="0.20"/>
   <xacro:property name="arm_link2_len" value="0.25"/>
-  <xacro:property name="arm_link3_len" value="0.15"/>
+  <!-- arm_link3 was 0.15: with joint2/3 limited to +-90 deg the elbow can't drop below the
+       shoulder (z=0.275), so the tip bottomed out at z=0.125 and the measured backpack
+       target (base_link z=0.10) was unreachable at any distance. 0.21 reaches z=0.10 at
+       0.30-0.37m horizontal distance, used with target_approach_node's standoff (0.33m). -->
+  <xacro:property name="arm_link3_len" value="0.21"/>
   <xacro:property name="link_radius" value="0.02"/>
 
   <material name="grey">
@@ -192,8 +196,9 @@
       </geometry>
     </collision>
     <inertial>
-      <mass value="0.15"/>
-      <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.00005"/>
+      <!-- scaled with the length (0.15 -> 0.21m): m = 0.15 * 0.21/0.15, I ~ m*L^2/12 -->
+      <mass value="0.21"/>
+      <inertia ixx="0.0008" ixy="0" ixz="0" iyy="0.0008" iyz="0" izz="0.00005"/>
     </inertial>
   </link>
 
