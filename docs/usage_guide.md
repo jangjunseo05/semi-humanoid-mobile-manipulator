@@ -126,14 +126,29 @@ ros2 run semih_perception arm_reach_node
 
 ### 팔만 따로 테스트하고 싶을 때 (인식 파이프라인 없이)
 
-팔 사거리는 base_link 기준 최대 0.40m입니다. 사거리 안의 좌표를 직접 publish:
+팔 사거리는 어깨(base_link z=0.275) 기준 최대 0.46m입니다(링크 0.25 + 0.21m, 2026-11-17에 끝 링크를 0.15→0.21m로 늘림). 사거리 안의 좌표를 직접 publish:
 ```bash
 ros2 topic pub --once /target_point geometry_msgs/msg/PointStamped \
   "{header: {frame_id: 'base_link'}, point: {x: 0.3, y: 0.0, z: 0.35}}"
 ```
 잘 되면 `ros2 topic echo /joint_states --once`로 `arm_joint2`/`arm_joint3`가 변하는 걸 확인할 수 있습니다.
 
-> 월드에 배치된 인식 대상(Chair, Backpack, Suitcase)은 로봇에서 1~3m 떨어져 있어 팔 사거리 밖입니다. 팔이 실제로 물체에 뻗는 걸 보려면 먼저 Nav2로 물체 근처(0.4m 이내)까지 이동시켜야 합니다.
+> 월드에 배치된 인식 대상(Chair, Backpack, Suitcase)은 로봇에서 1~3m 떨어져 있어 팔 사거리 밖입니다. 물체에 실제로 닿게 하려면 아래 "멀리서 검출 → 좌표 저장 → 접근 → 팔 뻗기"를 쓰세요.
+
+### 멀리서 검출 → 좌표 저장 → 접근 → 팔 뻗기 (`target_approach_node`)
+
+가까이 가면 YOLO가 가방을 "person"으로 잘못 보거나 놓치고, 팔은 가방 높이(base_link z≈0.1)에서 수평 0.30~0.37m 안에서만 닿습니다. 그래서 물체가 잘 보이는 1m 안팎에서 좌표를 odom에 저장해 두고, 그 좌표로 다가간 뒤 팔을 뻗습니다.
+
+`mode:=sim`(Nav2 없이)에서, 로봇이 가방을 정면으로 보는 위치(예: odom (1.87, -0.54), 가방 쪽 -21°)에 둔 다음:
+```bash
+ros2 run semih_perception target_3d_node --ros-args -p target_classes:=backpack -p confidence_threshold:=0.2
+ros2 run semih_perception arm_reach_node --ros-args -p input_topic:=/approach/target_point -p fold_first:=true
+ros2 run semih_perception target_approach_node   # standoff 0.33m 기본
+```
+- `target_approach_node`: 정지 상태에서 검출 10개가 5cm 안에 모이면 그 중앙값을 odom 좌표로 고정 → `/cmd_vel`로 회전·직진해 수평 0.33m에서 정지 → 저장한 좌표를 `/approach/target_point`로 보냄. 접근 중 검출은 무시합니다. Nav2가 떠 있으면 `/cmd_vel`이 겹치므로 쓰지 마세요(troubleshooting #14).
+- `fold_first:=true`: 팔꿈치 접기 → 어깨 내리기 → 펴기 3단계로 움직입니다. 한 번에 보간하면 팔 끝이 높은 곳에서 앞으로 0.42m까지 휘둘러 가방 위에 얹힙니다(2026-11-17 Gazebo에서 확인).
+- `confidence_threshold:=0.2`: 이 월드의 가방은 YOLOv8n이 뒤쪽에서 backpack 0.24~0.26으로만 잡고(같은 박스에 umbrella 0.41), 앞쪽에서는 suitcase로 봅니다. 그래서 클래스를 backpack으로 고정하고 임계값을 낮췄습니다.
+- 2026-11-17 실행 결과: 저장 좌표 odom (2.852, -0.920, 0.095), 도착 시 base_link (0.340, 0.000, 0.095). 팔 끝은 (0.326, 0.000, 0.079)에서 멈춰 측정 표면점과 2.1cm 차이. 같은 관절 명령을 빈 공간에서 주면 오차 0.0cm라서, 가방 표면에 막혀 멈춘 것으로 봅니다(접촉 센서로 확인하지는 않음). 오도메트리 오차는 Gazebo 실제 위치 대비 1.8~2.6cm.
 
 ## 5. 데이터 수집 (HDF5)
 
