@@ -17,6 +17,10 @@ arm_controller action server (the same one we tested manually earlier).
 This is a best-effort/demo IK -- our arm's reach is small (~0.46m) and the
 joint limits are fairly tight, so many target points will be out of range;
 those get clamped to the closest reachable pose rather than rejected outright.
+
+The input topic is a parameter (`input_topic`, default /target_point) so the arm can
+instead follow target_approach_node's stored target (/approach/target_point), which
+is only published once the base has driven to a reachable standoff.
 """
 
 import math
@@ -112,6 +116,7 @@ class ArmReachNode(Node):
         self.declare_parameter('arm_link3_len', 0.21)
         self.declare_parameter('joint1_limit', 3.14)
         self.declare_parameter('joint23_limit', 1.57)
+        self.declare_parameter('input_topic', '/target_point')
 
         self.base_height = self.get_parameter('base_height').value
         self.arm_link1_len = self.get_parameter('arm_link1_len').value
@@ -123,8 +128,9 @@ class ArmReachNode(Node):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
+        input_topic = self.get_parameter('input_topic').value
         self.subscription = self.create_subscription(
-            PointStamped, '/target_point', self.target_callback, 10
+            PointStamped, input_topic, self.target_callback, 10
         )
 
         self.action_client = ActionClient(
@@ -138,7 +144,7 @@ class ArmReachNode(Node):
         self.action_pub = self.create_publisher(JointState, '/arm_target_joint_states', 10)
 
         self.last_goal_time = 0.0
-        self.get_logger().info('Arm reach node started, waiting for /target_point ...')
+        self.get_logger().info(f'Arm reach node started, waiting for {input_topic} ...')
 
     def target_callback(self, msg: PointStamped):
         now = time.time()

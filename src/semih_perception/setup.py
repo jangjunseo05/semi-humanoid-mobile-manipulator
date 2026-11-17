@@ -27,6 +27,7 @@ setup(
             'yolo_detection_node = semih_perception.yolo_detection_node:main',
             'target_3d_node = semih_perception.target_3d_node:main',
             'arm_reach_node = semih_perception.arm_reach_node:main',
+            'target_approach_node = semih_perception.target_approach_node:main',
         ],
     },
 )
