@@ -102,6 +102,27 @@ def solve_ik(tx, ty, tz, *, base_height, arm_link1_len, arm_link2_len, arm_link3
     return joint1, joint2, joint3, was_clamped
 
 
+def fold_lower_extend(joint1, joint2, joint3, joint23_limit):
+    """Waypoints that keep the forearm pointing down/back until the shoulder is lowered.
+
+    A single trajectory point makes the controller interpolate all joints together; for a
+    low target in front (e.g. base_link (0.34, 0, 0.09)) the tip then swings out to
+    x=0.42m while still ~0.3m up and lands on top of the object instead of reaching its
+    near face (seen in Gazebo with the backpack, 2026-11-17). Folding the elbow to its
+    limit first caps the tip at sqrt(L2^2 + L3^2) = 0.33m forward while the shoulder
+    comes down, and the last leg moves the tip forward/up into the target.
+    """
+    fold = joint23_limit if joint3 >= 0 else -joint23_limit
+    return [(joint1, 0.0, fold), (joint1, joint2, fold), (joint1, joint2, joint3)]
+
+
+def _same_point(a, b, tol=0.01):
+    return (a.header.frame_id == b.header.frame_id
+            and abs(a.point.x - b.point.x) < tol
+            and abs(a.point.y - b.point.y) < tol
+            and abs(a.point.z - b.point.z) < tol)
+
+
 class ArmReachNode(Node):
     def __init__(self):
         super().__init__('arm_reach_node')
@@ -117,6 +138,12 @@ class ArmReachNode(Node):
         self.declare_parameter('joint1_limit', 3.14)
         self.declare_parameter('joint23_limit', 1.57)
         self.declare_parameter('input_topic', '/target_point')
+        # Move as fold elbow -> lower shoulder -> extend instead of one joint-space
+        # interpolation; see fold_lower_extend(). Off by default because with a live
+        # /target_point stream every new goal would fold the arm again.
+        self.declare_parameter('fold_first', False)
+        self.fold_first = self.get_parameter('fold_first').value
+        self.last_target_msg = None
 
         self.base_height = self.get_parameter('base_height').value
         self.arm_link1_len = self.get_parameter('arm_link1_len').value
@@ -150,6 +177,8 @@ class ArmReachNode(Node):
         now = time.time()
         if now - self.last_goal_time < MIN_GOAL_INTERVAL:
             return  # throttle
+        if self.last_target_msg is not None and _same_point(msg, self.last_target_msg):
+            return  # e.g. target_approach_node republishing the stored target
 
         # Transform the point from camera_link into base_link frame via TF.
         try:
@@ -188,6 +217,7 @@ class ArmReachNode(Node):
         self.send_trajectory(joint1, joint2, joint3)
         self.publish_action(joint1, joint2, joint3)
         self.last_goal_time = now
+        self.last_target_msg = msg
 
     def publish_action(self, joint1, joint2, joint3):
         msg = JointState()
@@ -203,10 +233,16 @@ class ArmReachNode(Node):
 
         goal = FollowJointTrajectory.Goal()
         goal.trajectory.joint_names = ['arm_joint1', 'arm_joint2', 'arm_joint3']
-        point = JointTrajectoryPoint()
-        point.positions = [joint1, joint2, joint3]
-        point.time_from_start = Duration(sec=2, nanosec=0)
-        goal.trajectory.points = [point]
+        if self.fold_first:
+            waypoints = fold_lower_extend(joint1, joint2, joint3, self.joint23_limit)
+        else:
+            waypoints = [(joint1, joint2, joint3)]
+        for i, positions in enumerate(waypoints, start=1):
+            point = JointTrajectoryPoint()
+            point.positions = list(positions)
+            point.time_from_start = Duration(sec=2 * i, nanosec=0)
+            goal.trajectory.points.append(point)
+
         future = self.action_client.send_goal_async(goal)
         future.add_done_callback(self._goal_response_callback)
 

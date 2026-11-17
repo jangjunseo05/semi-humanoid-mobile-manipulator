@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from semih_perception.arm_reach_node import solve_ik
+from semih_perception.arm_reach_node import fold_lower_extend, solve_ik
 
 
 # Same defaults as arm_reach_node's declared parameters / semih.urdf.xacro properties.
@@ -71,6 +71,33 @@ def test_below_joint_limit_target_is_flagged():
     # be clamped silently and reported as reachable.
     *_, was_clamped = solve_ik(0.25, 0.0, 0.0, **GEOM)
     assert was_clamped is True
+
+
+def _tip_path(waypoints, start=(0.0, 0.0, 0.0), n=50):
+    """Tip positions when each leg is interpolated linearly in joint space."""
+    pts, prev = [], start
+    for wp in waypoints:
+        for i in range(n + 1):
+            t = i / n
+            pts.append(forward_kinematics(*(a + (b - a) * t for a, b in zip(prev, wp))))
+        prev = wp
+    return pts
+
+
+def test_fold_path_stays_in_front_of_low_target():
+    # Direct interpolation to the backpack target swings the tip out to x~0.42m while
+    # still high (it landed on top of the backpack in Gazebo). Until the last leg, the
+    # folded path must stay closer than the target's near face.
+    target = (0.34, 0.0, 0.092)
+    joints = solve_ik(*target, **GEOM)[:3]
+    direct = _tip_path([joints])
+    assert max(p[0] for p in direct) > 0.40
+
+    waypoints = fold_lower_extend(*joints, GEOM['joint23_limit'])
+    path = _tip_path(waypoints)
+    before_last_leg = path[:2 * 51]
+    assert max(p[0] for p in before_last_leg) < target[0] - 0.01
+    assert math.dist(path[-1], target) < 0.01
 
 
 def test_yaw_points_toward_target():
