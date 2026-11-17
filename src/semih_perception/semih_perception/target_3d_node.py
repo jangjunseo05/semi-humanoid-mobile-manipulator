@@ -46,6 +46,10 @@ class Target3DNode(Node):
         self.declare_parameter('model_name', 'yolov8n.pt')
         self.declare_parameter('confidence_threshold', 0.4)
         self.declare_parameter('camera_frame', 'camera_link')
+        # Comma-separated YOLO class names to keep (e.g. 'backpack'); empty = any class.
+        # Without it the highest-confidence box wins, which in this world is often the
+        # chair, or a misclassified "person" when the backpack is close.
+        self.declare_parameter('target_classes', '')
 
         rgb_topic = self.get_parameter('rgb_topic').value
         depth_topic = self.get_parameter('depth_topic').value
@@ -54,6 +58,9 @@ class Target3DNode(Node):
         model_name = self.get_parameter('model_name').value
         self.confidence_threshold = self.get_parameter('confidence_threshold').value
         self.camera_frame = self.get_parameter('camera_frame').value
+        self.target_classes = {
+            c.strip() for c in self.get_parameter('target_classes').value.split(',') if c.strip()
+        }
 
         self.get_logger().info(f'Loading YOLO model: {model_name}...')
         self.model = YOLO(model_name)
@@ -116,8 +123,14 @@ class Target3DNode(Node):
         if len(boxes) == 0:
             return
 
-        # Pick the highest-confidence detection
+        # Pick the highest-confidence detection (among target_classes, if set)
         confs = boxes.conf.cpu().numpy()
+        if self.target_classes:
+            classes = boxes.cls.cpu().numpy().astype(int)
+            keep = np.array([self.model.names[c] in self.target_classes for c in classes])
+            if not keep.any():
+                return
+            confs = np.where(keep, confs, -1.0)
         best_idx = int(np.argmax(confs))
         best_box = boxes.xyxy.cpu().numpy()[best_idx]  # [x1, y1, x2, y2]
         class_id = int(boxes.cls.cpu().numpy()[best_idx])
