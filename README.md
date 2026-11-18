@@ -47,7 +47,9 @@ frontier 탐색이 바로 실패하고 다시 시도하지 않습니다. 그래�
   Gazebo에서 같은 조건 10회 중 9회 팔 끝이 측정한 가방 표면점 2cm 안까지 갔고(YOLO 신뢰도 임계값 0.2
   조건), 이후 팔 끝 링크에 단 접촉 센서로 같은 조건 3회 모두 가방에 닿는 것을 확인했습니다. 남은 약 2cm는
   링크 두께(반지름 1.6cm) 때문입니다. 다른 시작 위치 8곳에서는 YOLOv8n이 이 가방을 suitcase/umbrella로
-  보아 backpack 조건으로는 모두 검출에 실패했고, 인식 클래스를 넓히면 7곳 모두 접촉했습니다(병목은 인식).
+  보아 backpack 조건으로는 모두 검출에 실패했습니다. 이 월드에서 자동 라벨링한 사진으로 YOLOv8n을 추가
+  학습한 모델(`models/semih_yolov8n_ft.pt`, `tools/yolo_finetune/`)로는 원래 조건 그대로 9곳 모두 검출·접촉했습니다
+  (이 월드 전용 모델).
   물체를 잡는(grasp) 기능은 없습니다. 사용법은 `docs/usage_guide.md` 4절.
 
 ### `semih_data_collection` — 데이터셋 녹화
