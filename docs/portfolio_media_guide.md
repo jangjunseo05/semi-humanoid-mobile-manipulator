@@ -1,7 +1,7 @@
 # 포트폴리오 영상 가이드 — 세미휴머노이드 시뮬레이션 (STEP 3)
 
 이 저장소의 시뮬레이션 데모 영상을 포트폴리오에 넣을 때 **어떤 파일을, 어디에, 어떤 문구로** 넣는지 정리한 문서다.
-영상은 2026-11-16(장면 ①~⑤), 2026-11-17(`semih_reach_demo`), 2026-11-18(`semih_dashboard_demo` v2)에 Gazebo Fortress + ROS 2 Humble(WSL2, RTX 4070 Laptop)에서 녹화했다.
+영상은 2026-11-16(장면 ①~⑤)과 2026-11-18(`semih_reach_demo` v2, `semih_dashboard_demo` v2)에 Gazebo Fortress + ROS 2 Humble(WSL2, RTX 4070 Laptop)에서 녹화했다.
 녹화 과정과 문제 기록은 [semiH_troubleshooting_log.md](semiH_troubleshooting_log.md)와 포트폴리오 폴더의 `STEP3_결과보고.md`에 있다.
 
 ## 1. 저장 위치와 파일 이름
@@ -17,15 +17,16 @@
 | `semih_yolo.mp4` (+`.png`) | 18.0s | 1× | 장면 ③ YOLO + 뎁스 3D 좌표 |
 | `semih_arm_ik.mp4` (+`.png`) | 13.0s | 2× | 장면 ④ 팔 IK |
 | `semih_perception_arm.mp4` (+`.png`) | 14.0s | 2× | (선택) 장면 ⑤ 인식→팔 연결 — 옛 팔(2026-11-16)이라 닿지 않음. 아래 `semih_reach_demo.mp4`로 대체 권장 |
-| `semih_reach_demo.mp4` (+`.png`) | 28.7s | 2× (전 구간 동일, 벽시계 기준) | **2026-11-17** 탐지 → 위치 저장 → 접근 → 팔 뻗기 → 정지, 1회분 무편집. 1920×720 |
+| `semih_reach_demo.mp4` (+`.png`) | 32.3s | 2× (전 구간 동일, 벽시계 기준) | **2026-11-18 재녹화(v2, 접촉 센서 표시)** 탐지 → 위치 저장 → 접근 → 팔 뻗기 → 가방에 접촉, 1회분 무편집. 1920×720 |
 | `semih_dashboard_demo.mp4` (+`.png`) | 44.7s | 구간별 1× / 2× / 3× (라벨 표기) | **2026-11-18 재녹화(v2)** 웹 대시보드(semiH_web) 조작 + Nav2 주행, 7장면. 1920×1080 |
 
 - 원본 녹화본은 `포트폴리오\media_raw\`에 있다. 포트폴리오에는 올리지 않는다.
-  - `semih_reach_demo_raw.mp4`(데스크톱 캡처 2560×1600, 120s) + `semih_reach_demo_run\`(같은 회차의 카메라 프레임 570장·노드 로그·팔 끝 측정값)
+  - `semih_reach_demo_raw.mp4`(데스크톱 캡처 2560×1600, 120s) + `semih_reach_demo_run\`(같은 회차의 카메라 프레임·노드 로그·팔 끝 측정값·접촉 센서 기록 `contact_wall.txt`)
+  - `semih_reach_demo_v1_*`(2026-11-17 v1: 28.7s, 접촉 센서 없이 찍은 판. 교체 전 보관용)
   - `semih_dashboard_demo_raw.mp4`(데스크톱 캡처, 앞부분 109s, 자르지 않음) + `semih_dashboard_demo_raw_part2.mp4`(뒷부분 약 26s, 화면 캡처가 Gazebo 창이 닫힐 때 끊겨 자동 재시작된 뒤 부분) + `semih_dashboard_demo_events.json`(동작별 시각, Nav2 결과, 검증값)
   - `semih_dashboard_demo_v1_*`(2026-11-17 v1: 39.1s, 6장면, 로봇 주행 없음. 교체 전 보관용)
   - `semih_reach_repeat10\`(반복 시험 10회의 로그와 `summary.md`)
-- 새 영상 2개는 가로 1920이라 위 웹 규격(1280)보다 크다. 용량은 0.92MB / 1.59MB다.
+- 새 영상 2개는 가로 1920이라 위 웹 규격(1280)보다 크다. 용량은 1.00MB / 1.59MB다.
 - 웹 규격: 무음, H.264, 가로 1280, `-crf 24 -preset slow -pix_fmt yuv420p -movflags +faststart`. 모든 파일이 1MB 미만이다.
 - 웹 페이지에 넣을 때는 `<video src="semih_demo_summary.mp4" poster="semih_demo_summary.png" muted loop playsinline controls>`처럼 썸네일 png를 poster로 쓴다.
 
@@ -39,18 +40,20 @@
 | `semih_yolo.mp4` | YOLOv8n 검출 결과와 뎁스 기반 3D 좌표를 RViz에 함께 표시 | YOLOv8n detections with depth-based 3D target points shown in RViz |
 | `semih_arm_ik.mp4` | 해석적 IK로 목표점 6개에 팔 끝을 위치 (오차 0.0cm, 2배속) | Analytic IK places the arm tip on six target points (0.0 cm error, 2×) |
 | `semih_perception_arm.mp4` | 검출된 물체의 3D 좌표로 팔을 뻗는 연결 동작. 목표가 작업영역 밖이라 최대 도달 거리에서 정지 | Detection-to-arm pipeline: the arm extends toward the detected object but stops at max reach (target out of workspace) |
-| `semih_reach_demo.mp4` | 멀리서 YOLO로 가방을 찾아 위치를 저장하고, 그 위치로 다가가 팔을 뻗어 가방 표면 앞 2cm에서 정지 (Gazebo 시뮬레이션, 같은 조건 10회 중 9회 성공, YOLO 신뢰도 임계값 0.2, 접촉 센서 미확인, 2배속) | Detects the backpack from afar, stores its position, drives up and reaches to 2 cm short of its surface (Gazebo sim, 9/10 runs under identical conditions, YOLO confidence threshold 0.2, no contact sensor, 2×) |
+| `semih_reach_demo.mp4` | 멀리서 YOLO로 가방을 찾아 위치를 저장하고, 그 위치로 다가가 팔을 뻗어 가방에 닿음 — 접촉 센서로 확인 (Gazebo 시뮬레이션, 같은 시작 위치, YOLO 신뢰도 임계값 0.2, 파지 없음, 2배속) | Detects the backpack from afar, stores its position, drives up and reaches until the arm touches it — confirmed by a contact sensor (Gazebo sim, fixed start pose, YOLO confidence threshold 0.2, no grasping, 2×) |
 | `semih_dashboard_demo.mp4` | 웹 대시보드에서 시뮬레이션 환경(SLAM+Nav2)을 켜고, Nav2 목표를 주면 로봇이 주행한 뒤, 인식 노드 실행 — 새로고침해도 상태 유지, 중복 실행 방지, 종료 시 Gazebo 창까지 정리 (목표는 스크립트로 전송, 대기 구간 컷, 주행 3배속) | Web dashboard starting the simulation (SLAM + Nav2), the robot driving to a Nav2 goal, then the perception nodes — state survives reload, duplicate launch is blocked, stopping closes Gazebo (goal sent by script, idle time cut, drive at 3×) |
 
 ### `semih_reach_demo.mp4` — 무엇이 찍혀 있나
 
 - 왼쪽: Gazebo GUI 화면(데스크톱 캡처를 잘라 1280×720). 오른쪽: **같은 회차** 로봇 카메라 프레임.
-- 단계 라벨(0/4~4/4): 시작 자세 → 탐지·위치 저장(검출 10개 중앙값을 odom에 고정) → 저장 위치로 주행(0.33m에서 정지, 이후 검출 무시) → 팔 뻗기(팔꿈치 접기 → 어깨 내리기 → 펴기) → 정지.
-- 이 회차 값: 저장 좌표 odom (2.852, -0.920, 0.092), 도착 시 목표 base_link (0.340, 0.000, 0.092), 팔 끝 (0.325, 0.000, 0.079) → **표면점과 2.0cm**, clamp 없음.
-- 오른쪽 YOLO 박스는 **녹화한 카메라 프레임에 같은 모델(YOLOv8n)·같은 임계값(0.2)으로 다시 그린 것**이다. 노드가 실시간으로 낸 박스 영상이 아니다. 이유: 노드의 기본 그림(`yolo_detection_node`)은 같은 박스의 umbrella 0.41 라벨이 backpack 0.24 라벨을 덮어서, 파이프라인이 실제로 쓴 backpack 박스가 안 보였다(1차 녹화에서 확인). JPEG로 저장한 프레임이라 실시간 결과와 2순위 클래스가 조금 다를 수 있다(이 회차 첫 장면: suitcase 0.47 / backpack 0.26).
+2026-11-18에 다시 녹화한 v2다. v1(2026-11-17)은 접촉 센서 없이 찍어 "표면점 2.0cm 앞에서 정지"로 표시했는데, 이후 센서로 실제로는 닿아 있었음을 확인해 같은 조건으로 다시 찍었다.
+- 단계 라벨(0/4~4/4): 시작 자세 → 탐지·위치 저장(검출 10개 중앙값을 odom에 고정) → 저장 위치로 주행(0.33m에서 정지, 이후 검출 무시) → 팔 뻗기(팔꿈치 접기 → 어깨 내리기 → 펴기) → **팔 끝 링크가 가방에 접촉**.
+- 오른쪽 위 "no contact / CONTACT" 표시와 아래 줄 "contact sensor (arm_link3)"은 **이 회차에 녹화하며 기록한 접촉 센서 값**(실제 시각 기록)이다. 도착 16.8초 뒤 처음 접촉했고, 기록이 끝날 때까지(약 8초) 접촉이 이어졌다. 접촉 상대는 `backpack_1` 하나뿐이었다.
+- 이 회차 값: 저장 좌표 odom (2.852, -0.920, 0.093), 도착 시 목표 base_link (0.340, 0.000, 0.093), 접촉점 base_link (0.338, -0.009, 0.084), 팔 끝 좌표(링크 중심축 끝) (0.325, 0.000, 0.079), clamp 없음. 영상의 "tip axis end vs target 2.1 cm"는 중심축 끝과 목표점의 거리이고, 링크 반지름이 1.6cm라 표면은 닿아 있다.
+- 오른쪽 YOLO 박스는 **녹화한 카메라 프레임에 같은 모델(YOLOv8n)·같은 임계값(0.2)으로 다시 그린 것**이다. 노드가 실시간으로 낸 박스 영상이 아니다. 이유: 노드의 기본 그림(`yolo_detection_node`)은 같은 박스의 umbrella 0.41 라벨이 backpack 0.24 라벨을 덮어서, 파이프라인이 실제로 쓴 backpack 박스가 안 보였다(v1 1차 녹화에서 확인). JPEG로 저장한 프레임이라 실시간 결과와 2순위 클래스가 조금 다를 수 있다. 팔이 카메라 앞을 가린 마지막 장면에서는 person 0.26 같은 오검출 박스도 보인다(지우지 않았다).
 - 시작 위치(odom (1.87, -0.54), 가방 쪽 -21°)까지는 테스트 스크립트로 옮겼다. 영상은 그 뒤부터다.
 - GUI를 켜면 시뮬레이션이 실시간보다 느리게 돈다(화면 우하단 RTF 약 18~90%). 배속 2×는 벽시계 기준이다.
-- 녹화는 2번 했다. 1차는 위 YOLO 라벨 문제로 다시 찍었고, 1차도 성공(clamp 없음, 약 2.1cm)이었다. 영상은 2차 1회분을 자르지 않고 썼다.
+- v2 녹화는 1번 했고, 그 1회분을 자르지 않고 썼다. 영상은 접촉이 시작된 뒤 7초(벽시계)에서 끝난다.
 
 ### `semih_dashboard_demo.mp4` — 무엇이 찍혀 있나
 
@@ -88,7 +91,8 @@
   - 성공 기준(시험 전에 정함): 탐지 고정 → 도착 → 팔 명령이 clamp 없이 끝나고, 팔 끝이 **깊이로 잰 가방 표면점** 3cm 이내.
   - 같은 월드, 같은 시작 위치, 회차마다 Gazebo를 새로 띄움(headless). 성공 9회의 팔 끝–표면점 거리 2.0~2.1cm, 오도메트리 오차(Gazebo 실제 위치 대비) 1.7~1.8cm.
   - 실패 1회(5회차): 측정된 표면점 높이가 z 0.084로 다른 회차(0.092~0.095)보다 낮아 어깨 관절이 한계(90°)에 걸려 IK가 clamp를 냈다. 팔 끝 자체는 1.9cm였지만 기준대로 실패로 셌다. 이 높이에서 작업영역 여유가 얇다는 뜻이다.
-  - **접촉 센서로 확인하지 않았다.** "닿았다"가 아니라 "표면 앞 2cm까지 도달"로 쓴다. 측정 기준점도 실제 표면이 아니라 뎁스로 잰 점이다.
+  - **이 10회 시험 때는 접촉 센서가 없었다.** 센서는 2026-11-18에 `arm_link3`에 달았고, 이후 같은 조건으로 3회(시험 2회 + 영상 녹화 1회) 돌려 **3회 모두 `backpack_1`과 접촉**을 확인했다. 접촉점은 측정 표면점과 0.2cm, 팔 끝 좌표(링크 중심축 끝)와 약 1.6cm(링크 반지름) 차이였다. 그래서 위 "2.0~2.1cm"는 못 미친 거리가 아니라 중심축 끝에서 잰 값이다.
+  - 따라서 "닿았다"는 **"접촉 센서로 확인한 3회"**를 근거로 쓴다. 10회 중 9회라는 숫자에 "닿음"을 붙이려면 "9/10은 거리 기준, 접촉은 이후 3회에서 확인"처럼 나눠 적는다. 실패한 5회차(clamp)의 접촉 여부는 확인하지 않았다.
   - **YOLO 신뢰도 임계값 0.2 조건**이다(이 가방은 backpack 0.21~0.26으로만 검출됨). 코드 기본값은 0.4 그대로다.
   - 시뮬레이션이 결정적이라 10회 결과가 거의 같다(저장 좌표 차이 2mm 이내). 다양한 위치·물체에 대한 일반화가 아니다.
   - 어느 경우든 "물체를 집는다"고 쓰지 않는다(파지 기능 없음).
@@ -100,7 +104,9 @@
 - "실제 로봇에서 동작" / "실환경 검증" — 시뮬레이션만 했다.
 - "자율 탐색(explore)" — 탐색은 시도하지 않았다.
 - "인식한 물체를 집는다" / "모바일 매니퓰레이션 완성" — 파지(grasp)는 구현하지 않았다. 기존 ⑤ 클립은 도달하지 못했고, 새 코드도 도달(reach)까지만 한다.
-- "물체에 닿았다" — 접촉 센서로 확인하지 않았다. "표면 앞 N cm까지 도달"로 쓴다.
+- "10회 중 9회 닿았다" — 10회 시험 때는 접촉 센서가 없었다. 접촉은 이후 3회에서 확인했다. "물체에 닿았다"는 "Gazebo 접촉 센서로 확인, 같은 시작 위치" 조건과 함께 쓴다.
+- "가방 표면 앞 2cm에서 정지" — v1 표현이다. 실제로는 링크 표면이 닿아 있었다(2cm는 중심축 끝 기준).
+- "물체를 정확히 터치/누른다" — 힘 제어나 접촉력 측정은 없다. 위치 명령으로 뻗다가 막힌 것이다.
 - "성공률 90%" 단독 — "시뮬레이션, 같은 조건 10회, 신뢰도 임계값 0.2" 조건 없이 쓰지 않는다.
 - "대시보드에서 전체 중지" — 그런 버튼은 없다. 환경 종료와 노드별 종료가 따로다.
 - "대시보드에서 목표를 찍어 주행" — 대시보드 영상의 목표는 스크립트로 보냈다. 대시보드는 환경을 켜고 끄는 역할이다.
