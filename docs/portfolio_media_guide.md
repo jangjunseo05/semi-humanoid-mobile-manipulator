@@ -1,7 +1,7 @@
 # 포트폴리오 영상 가이드 — 세미휴머노이드 시뮬레이션 (STEP 3)
 
 이 저장소의 시뮬레이션 데모 영상을 포트폴리오에 넣을 때 **어떤 파일을, 어디에, 어떤 문구로** 넣는지 정리한 문서다.
-영상은 2026-11-16(장면 ①~⑤)과 2026-11-17(`semih_reach_demo`, `semih_dashboard_demo`)에 Gazebo Fortress + ROS 2 Humble(WSL2, RTX 4070 Laptop)에서 녹화했다.
+영상은 2026-11-16(장면 ①~⑤), 2026-11-17(`semih_reach_demo`), 2026-11-18(`semih_dashboard_demo` v2)에 Gazebo Fortress + ROS 2 Humble(WSL2, RTX 4070 Laptop)에서 녹화했다.
 녹화 과정과 문제 기록은 [semiH_troubleshooting_log.md](semiH_troubleshooting_log.md)와 포트폴리오 폴더의 `STEP3_결과보고.md`에 있다.
 
 ## 1. 저장 위치와 파일 이름
@@ -18,13 +18,14 @@
 | `semih_arm_ik.mp4` (+`.png`) | 13.0s | 2× | 장면 ④ 팔 IK |
 | `semih_perception_arm.mp4` (+`.png`) | 14.0s | 2× | (선택) 장면 ⑤ 인식→팔 연결 — 옛 팔(2026-11-16)이라 닿지 않음. 아래 `semih_reach_demo.mp4`로 대체 권장 |
 | `semih_reach_demo.mp4` (+`.png`) | 28.7s | 2× (전 구간 동일, 벽시계 기준) | **2026-11-17** 탐지 → 위치 저장 → 접근 → 팔 뻗기 → 정지, 1회분 무편집. 1920×720 |
-| `semih_dashboard_demo.mp4` (+`.png`) | 39.1s | 1× (장면 4만 2×) | **2026-11-17** 웹 대시보드(semiH_web) 조작 6장면. 1920×1080 |
+| `semih_dashboard_demo.mp4` (+`.png`) | 44.7s | 구간별 1× / 2× / 3× (라벨 표기) | **2026-11-18 재녹화(v2)** 웹 대시보드(semiH_web) 조작 + Nav2 주행, 7장면. 1920×1080 |
 
 - 원본 녹화본은 `포트폴리오\media_raw\`에 있다. 포트폴리오에는 올리지 않는다.
   - `semih_reach_demo_raw.mp4`(데스크톱 캡처 2560×1600, 120s) + `semih_reach_demo_run\`(같은 회차의 카메라 프레임 570장·노드 로그·팔 끝 측정값)
-  - `semih_dashboard_demo_raw.mp4`(데스크톱 캡처, 80s, 자르지 않음) + `semih_dashboard_demo_events.json`(동작별 시각, 검증값)
+  - `semih_dashboard_demo_raw.mp4`(데스크톱 캡처, 앞부분 109s, 자르지 않음) + `semih_dashboard_demo_raw_part2.mp4`(뒷부분 약 26s, 화면 캡처가 Gazebo 창이 닫힐 때 끊겨 자동 재시작된 뒤 부분) + `semih_dashboard_demo_events.json`(동작별 시각, Nav2 결과, 검증값)
+  - `semih_dashboard_demo_v1_*`(2026-11-17 v1: 39.1s, 6장면, 로봇 주행 없음. 교체 전 보관용)
   - `semih_reach_repeat10\`(반복 시험 10회의 로그와 `summary.md`)
-- 새 영상 2개는 가로 1920이라 위 웹 규격(1280)보다 크다. 용량은 0.92MB / 1.36MB다.
+- 새 영상 2개는 가로 1920이라 위 웹 규격(1280)보다 크다. 용량은 0.92MB / 1.59MB다.
 - 웹 규격: 무음, H.264, 가로 1280, `-crf 24 -preset slow -pix_fmt yuv420p -movflags +faststart`. 모든 파일이 1MB 미만이다.
 - 웹 페이지에 넣을 때는 `<video src="semih_demo_summary.mp4" poster="semih_demo_summary.png" muted loop playsinline controls>`처럼 썸네일 png를 poster로 쓴다.
 
@@ -39,7 +40,7 @@
 | `semih_arm_ik.mp4` | 해석적 IK로 목표점 6개에 팔 끝을 위치 (오차 0.0cm, 2배속) | Analytic IK places the arm tip on six target points (0.0 cm error, 2×) |
 | `semih_perception_arm.mp4` | 검출된 물체의 3D 좌표로 팔을 뻗는 연결 동작. 목표가 작업영역 밖이라 최대 도달 거리에서 정지 | Detection-to-arm pipeline: the arm extends toward the detected object but stops at max reach (target out of workspace) |
 | `semih_reach_demo.mp4` | 멀리서 YOLO로 가방을 찾아 위치를 저장하고, 그 위치로 다가가 팔을 뻗어 가방 표면 앞 2cm에서 정지 (Gazebo 시뮬레이션, 같은 조건 10회 중 9회 성공, YOLO 신뢰도 임계값 0.2, 접촉 센서 미확인, 2배속) | Detects the backpack from afar, stores its position, drives up and reaches to 2 cm short of its surface (Gazebo sim, 9/10 runs under identical conditions, YOLO confidence threshold 0.2, no contact sensor, 2×) |
-| `semih_dashboard_demo.mp4` | 웹 대시보드에서 시뮬레이션 환경과 인식 노드를 켜고 끄는 장면 — 새로고침해도 상태 유지, 중복 실행 방지, 종료 시 Gazebo 창까지 정리 | Web dashboard starting/stopping the simulation and perception nodes — state survives reload, duplicate launch is blocked, stopping closes Gazebo |
+| `semih_dashboard_demo.mp4` | 웹 대시보드에서 시뮬레이션 환경(SLAM+Nav2)을 켜고, Nav2 목표를 주면 로봇이 주행한 뒤, 인식 노드 실행 — 새로고침해도 상태 유지, 중복 실행 방지, 종료 시 Gazebo 창까지 정리 (목표는 스크립트로 전송, 대기 구간 컷, 주행 3배속) | Web dashboard starting the simulation (SLAM + Nav2), the robot driving to a Nav2 goal, then the perception nodes — state survives reload, duplicate launch is blocked, stopping closes Gazebo (goal sent by script, idle time cut, drive at 3×) |
 
 ### `semih_reach_demo.mp4` — 무엇이 찍혀 있나
 
@@ -53,16 +54,20 @@
 
 ### `semih_dashboard_demo.mp4` — 무엇이 찍혀 있나
 
-녹화 한 번(80초)에서 장면 6개를 잘라 이었다(장면 사이는 컷). Chrome 창을 DevTools 프로토콜로 자동 조작했고, 누르기 직전에 빨간 테두리로 표시한 뒤 실제 마우스 이벤트로 눌렀다.
-1. 첫 화면 — 모든 카드 정지
-2. 환경 카드: "Gazebo GUI 창도 띄우기" 체크 → nav 시작 → Gazebo 창이 뜨고 상태가 실행 중(mode nav, headless False)
-3. 새로고침 → 실행 상태 유지(상태가 브라우저가 아니라 디스크 lock 파일에 있음)
-4. 인식 카드: YOLO → 3D 좌표 추출 → 팔 뻗기 순서로 시작 (2×)
-5. **중복 실행 방지:** 시작 전에 열어 둔 두 번째 탭(옛 화면, 시작 버튼이 보이는 상태)에서 nav를 다시 누름 → 두 번째 실행 없이 "이미 실행 중"으로 바뀜. Gazebo 서버 프로세스 수를 누르기 전후로 셌다: 1 → 1.
-6. 환경 종료 → Gazebo 창이 닫힘
+2026-11-18에 다시 녹화한 v2다. v1(2026-11-17, 39.1s)은 nav를 켠 뒤 로봇이 움직이는 장면 없이 다음 장면으로 넘어가서, Nav2 주행 장면(3/7)을 넣어 새로 찍었다.
+녹화 한 번(137초)에서 장면 7개를 잘라 이었고, 아무 일도 일어나지 않는 대기 구간은 잘라냈다(Nav2 기동 대기, 목표 전송 후 출발까지 약 9초, 장면 사이). Chrome 창을 DevTools 프로토콜로 자동 조작했고, 누르기 직전에 빨간 테두리로 표시한 뒤 실제 마우스 이벤트로 눌렀다.
+1. 첫 화면 — 모든 카드 정지 (1×)
+2. 환경 카드: "Gazebo GUI 창도 띄우기" 체크 → nav 시작 → Gazebo 창이 뜨고 상태가 실행 중(mode nav, headless False) (1×, 창이 뜨는 구간 2×)
+3. **Nav2 주행:** 목표 (2.2, -0.3, map 좌표)를 보내자 로봇이 Gazebo에서 주행해 도착 → Nav2 결과 SUCCEEDED, 도착 odom (2.223, -0.234). 출발 전 모습 1×, 주행 구간(벽시계 약 25초) 3×.
+4. 새로고침 → 실행 상태 유지(상태가 브라우저가 아니라 디스크 lock 파일에 있음)
+5. 인식 카드: YOLO → 3D 좌표 추출 → 팔 뻗기 순서로 시작 (2×)
+6. **중복 실행 방지:** 시작 전에 열어 둔 두 번째 탭(옛 화면, 시작 버튼이 보이는 상태)에서 nav를 다시 누름 → 두 번째 실행 없이 "이미 실행 중"으로 바뀜. Gazebo 서버 프로세스 수를 누르기 전후로 셌다: 1 → 1.
+7. 환경 종료 → Gazebo 창이 닫힘
 
-- **"전체 중지" 버튼은 없다.** "환경 종료"는 Gazebo/SLAM/Nav2만 끈다. 인식 노드 3개는 카드별 "⏹ 종료"로 따로 껐다(원본 65~76초, 편집본에서는 길이 때문에 뺐다). 마지막에 lock 0개, 관련 프로세스 0개를 확인했다.
-- 인식 노드는 원래 여러 개 동시 실행을 허용하는 설계라(카드에 "여러 개 동시 실행 가능"이라고 적혀 있음) 노드 쪽 중복 실행은 막지 않는다. 장면 5는 **환경(bringup)** 의 중복 실행 방지다.
+- **Nav2 목표는 스크립트가 보냈다.** 대시보드에는 목표를 보내는 버튼이 없다(RViz 카드의 "2D Nav Goal"로 줄 수 있지만 녹화 자동화에서는 쓰지 않았다). 스크립트는 RViz와 같은 `navigate_to_pose` 액션을 썼고, 영상 라벨에 "sent by script"로 적었다. 목표 좌표는 사람이 정한 값이며 인식(YOLO) 결과와 무관하다.
+- 주행 장면만 로봇이 잘 보이게 Gazebo 창을 크게 키우고 카메라를 가까이 옮겼다. 그동안 대시보드 창은 잠시 내렸고, 장면이 끝난 뒤 원래 배치로 되돌렸다.
+- **"전체 중지" 버튼은 없다.** "환경 종료"는 Gazebo/SLAM/Nav2만 끈다. 인식 노드 3개는 카드별 "⏹ 종료"로 따로 껐다(원본 111~129초, `_raw_part2.mp4`에 있음. 편집본에서는 뺐다). 마지막에 lock 0개, 관련 프로세스 0개를 확인했다.
+- 인식 노드는 원래 여러 개 동시 실행을 허용하는 설계라(카드에 "여러 개 동시 실행 가능"이라고 적혀 있음) 노드 쪽 중복 실행은 막지 않는다. 장면 6은 **환경(bringup)** 의 중복 실행 방지다.
 - 이 녹화에서 인식 노드는 대시보드 기본값(클래스 필터 없음, 신뢰도 0.4)으로 켜졌다. 이 영상은 대시보드 조작만 보여 주고, 팔이 가방에 닿는 동작은 `semih_reach_demo.mp4`에서 보인다.
 - 녹화 전용 처리: Streamlit 자체 버튼(Deploy·메뉴)은 숨겼다. 화면 뒤쪽은 단색 창으로 가렸다(다른 창이 찍히지 않게).
 - 대시보드는 이 PC의 별도 가상환경(`~/semih_web_venv`, streamlit 1.65.0)에서 `127.0.0.1:8502`로 띄웠다. 저장소 코드는 바꾸지 않았다.
@@ -74,6 +79,7 @@
 - **스크립트로 준 입력:** 사람이 실시간으로 조종한 것이 아니다.
   - SLAM 주행: 미리 정한 웨이포인트를 odom 기반 P제어로 `/cmd_vel`에 보냈다(키보드 조작 대체).
   - Nav2: 목표 4개를 `navigate_to_pose` 액션으로 보냈다(4개 모두 SUCCEEDED, 클립에는 앞의 2개).
+  - 대시보드 영상의 주행: 목표 1개 (2.2, -0.3)를 `navigate_to_pose` 액션으로 보냈다(SUCCEEDED).
   - 팔 IK: `/target_point`에 목표 6개를 4초 간격으로 보냈다.
   - YOLO / 인식→팔: 로봇 이동만 스크립트, 검출·3D 좌표·팔 목표는 노드가 실제로 낸 값이다.
 - **오검출이 영상에 남아 있다.** 여행가방을 traffic light로, 가까운 가방을 umbrella / person으로 잘못 분류하는 장면이 있다. 잘라내지 않았다.
@@ -87,7 +93,7 @@
   - 시뮬레이션이 결정적이라 10회 결과가 거의 같다(저장 좌표 차이 2mm 이내). 다양한 위치·물체에 대한 일반화가 아니다.
   - 어느 경우든 "물체를 집는다"고 쓰지 않는다(파지 기능 없음).
 - **3D 좌표 정확도:** 뎁스로 얻은 점과 물체 원점 사이 수평 거리는 의자 0.24~0.28m, 가방 0.14~0.19m다(물체 표면 기준이라 생기는 차이). 정밀도를 내세우지 않는다.
-- **편집 원칙:** 각 클립은 녹화 한 번에서 연속된 한 구간만 잘랐다. 여러 시도를 이어 붙이지 않았다. 예외: `semih_dashboard_demo.mp4`는 녹화 한 번에서 장면 6개를 잘라 이었다(장면 사이 컷, 라벨에 번호 표기).
+- **편집 원칙:** 각 클립은 녹화 한 번에서 연속된 한 구간만 잘랐다. 여러 시도를 이어 붙이지 않았다. 예외: `semih_dashboard_demo.mp4`는 녹화 한 번에서 장면 7개를 잘라 이었고, 장면 안의 대기 구간도 잘라냈다(라벨에 장면 번호와 배속 표기). 다른 녹화 시도의 장면은 섞지 않았다.
 
 ## 4. 쓰지 말아야 할 표현
 
@@ -97,5 +103,7 @@
 - "물체에 닿았다" — 접촉 센서로 확인하지 않았다. "표면 앞 N cm까지 도달"로 쓴다.
 - "성공률 90%" 단독 — "시뮬레이션, 같은 조건 10회, 신뢰도 임계값 0.2" 조건 없이 쓰지 않는다.
 - "대시보드에서 전체 중지" — 그런 버튼은 없다. 환경 종료와 노드별 종료가 따로다.
+- "대시보드에서 목표를 찍어 주행" — 대시보드 영상의 목표는 스크립트로 보냈다. 대시보드는 환경을 켜고 끄는 역할이다.
+- "인식한 물체로 자율 주행"(대시보드 영상 기준) — 이 주행의 목표는 사람이 정한 좌표다. 인식 결과로 접근하는 동작은 `semih_reach_demo.mp4`다.
 - "중복 실행을 모두 막는다" — 막는 것은 환경(bringup)과 HDF5 수집이다. 인식 노드는 여러 개 실행을 허용한다.
 - "IK 오차 0" 단독 표기 — 시뮬레이션에서 TF로 잰 값(0.0cm)임을 함께 적는다.
