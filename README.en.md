@@ -45,15 +45,13 @@ linear motion).
 - `arm_reach_node` — analytical inverse kinematics to reach the localized target
 - `target_approach_node` — stores a target detected from afar in the odom frame, drives to a
   reachable standoff (0.33 m horizontal) and then hands the stored point to the arm, since
-  detection becomes unreliable up close. In Gazebo the tip got within 2 cm of the measured
-  backpack surface point in 9 of 10 runs under identical conditions (YOLO confidence threshold
-  0.2); a contact sensor added later on the last arm link confirmed contact with the backpack in
-  all 3 runs under the same conditions. The remaining ~2 cm is the link thickness (radius 1.6 cm).
-  From 8 other start poses YOLOv8n labels this bag suitcase/umbrella, so the backpack-only setting
-  never locked a target. A YOLOv8n fine-tuned on auto-labelled images of this world
-  (`models/semih_yolov8n_ft.pt`, `tools/yolo_finetune/`) detected the bag and made contact from
-  all 9 poses with the original backpack-only setting (a model specific to this world).
-  No grasping. See `docs/usage_guide.md` section 4.
+  detection becomes unreliable up close. In Gazebo, with a YOLOv8n fine-tuned on auto-labelled
+  images of this world (`models/semih_yolov8n_ft.pt`, `tools/yolo_finetune/`), the arm touched
+  the backpack in 10 of 10 runs from the same start pose (confirmed by a contact sensor on the
+  last arm link; backpack-only, confidence 0.2) and from all 9 tested start poses (90-270 deg
+  around the bag, 0.9-2.0 m). The pretrained YOLOv8n sees this bag as suitcase/umbrella from most
+  directions and only worked from the original pose (9/10 in an earlier run without the sensor).
+  The fine-tuned model is specific to this world. No grasping. See `docs/usage_guide.md` section 4.
 
 ### `semih_data_collection` — dataset recording
 - `hdf5_collector_node` — synchronizes camera, lidar, joint-state, and odometry

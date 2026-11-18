@@ -153,6 +153,7 @@ ros2 run semih_perception target_approach_node   # standoff 0.33m 기본
 - 접촉 확인(2026-11-18): `arm_link3`에 Gazebo 접촉 센서를 달았습니다(`ign topic -e -t /semih/arm_contact`). 같은 조건 3회 모두 `backpack_1`과의 접촉만 기록됐고, 접촉점은 base_link (0.338, -0.009, 0.084) — 측정 표면점(x 0.340)과 0.2cm, 팔 끝 좌표와 약 1.6cm(링크 반지름) 차이입니다. 위의 "2cm"는 팔 끝 좌표를 링크 중심축 끝에서 잰 값이고, 링크 표면은 가방에 닿아 있습니다. 위 10회 시험 때는 센서가 없었습니다.
 - 다른 시작 위치(2026-11-18, 가방 기준 90°~270°, 0.9~2.0m, 8곳): `target_classes:=backpack`으로는 8곳 모두 검출 실패(YOLOv8n이 이 가방을 suitcase/umbrella로 봄, backpack 최고 0.11). `-p target_classes:=backpack,suitcase,umbrella`로 바꾸면 7곳에서 목표를 고정했고 7곳 모두 가방에 접촉했습니다(5곳은 clamp). 다른 위치에서 쓰려면 이 클래스 설정이 필요하고, 그만큼 다른 suitcase/umbrella를 잘못 잡을 위험이 있습니다(이 월드에는 `suitcase_1`이 (5, 1.5)에 있음).
 - **권장: 추가 학습 모델 사용**(2026-11-18). `-p model_name:=$HOME/semiH_ws/models/semih_yolov8n_ft.pt`를 주면 `target_classes:=backpack` 그대로 원래 시작 위치 + 8곳 모두 목표를 고정하고 가방에 접촉했습니다. 만든 방법·평가·한계는 `tools/yolo_finetune/README.md`. 이 월드 전용 모델입니다.
+- 10회 재시험(2026-11-18, 추가 학습 모델, 원래 시작 위치, backpack만·0.2): **10/10 성공**(clamp 없음, 10회 모두 접촉 센서로 가방 접촉 확인). 측정 표면점 z 0.106~0.107, 팔 끝–목표점 2.3~2.4cm(링크 중심축 끝 기준).
 
 ## 5. 데이터 수집 (HDF5)
 
