@@ -189,6 +189,7 @@
       </geometry>
       <material name="orange"/>
     </visual>
+    <!-- URDF->SDF names this collision "arm_link3_collision"; the contact sensor below uses that name -->
     <collision>
       <origin xyz="0 0 ${arm_link3_len/2}" rpy="0 0 0"/>
       <geometry>
@@ -310,6 +311,19 @@
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find semih_description)/config/semih_controllers.yaml</parameters>
     </plugin>
+  </gazebo>
+
+  <!-- Contact sensor on the last arm link: reports what the arm tip touches (needs the world's
+       Contact system, already in semih_world.sdf). Topic: /semih/arm_contact (ignition.msgs.Contacts) -->
+  <gazebo reference="arm_link3">
+    <sensor name="arm_contact" type="contact">
+      <always_on>true</always_on>
+      <update_rate>50</update_rate>
+      <contact>
+        <collision>arm_link3_collision</collision>
+        <topic>/semih/arm_contact</topic>
+      </contact>
+    </sensor>
   </gazebo>
 
   <!-- Camera sensor definition (Fortress/Ignition native sensor, no extra plugin needed) -->

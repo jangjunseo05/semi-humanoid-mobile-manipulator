@@ -45,10 +45,11 @@ linear motion).
 - `arm_reach_node` — analytical inverse kinematics to reach the localized target
 - `target_approach_node` — stores a target detected from afar in the odom frame, drives to a
   reachable standoff (0.33 m horizontal) and then hands the stored point to the arm, since
-  detection becomes unreliable up close. In Gazebo the tip stopped about 2 cm short of the
-  backpack surface in 9 of 10 runs under identical conditions (not confirmed with a contact
-  sensor; YOLO confidence threshold 0.2). No
-  grasping. See `docs/usage_guide.md` section 4.
+  detection becomes unreliable up close. In Gazebo the tip got within 2 cm of the measured
+  backpack surface point in 9 of 10 runs under identical conditions (YOLO confidence threshold
+  0.2); a contact sensor added later on the last arm link confirmed contact with the backpack in
+  all 3 runs under the same conditions. The remaining ~2 cm is the link thickness (radius 1.6 cm).
+  No grasping. See `docs/usage_guide.md` section 4.
 
 ### `semih_data_collection` — dataset recording
 - `hdf5_collector_node` — synchronizes camera, lidar, joint-state, and odometry
