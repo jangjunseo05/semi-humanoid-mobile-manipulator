@@ -1048,6 +1048,15 @@ COCO 80종 학습 모델(`confidence_threshold: 0.4`)이라 sim 월드의 물체
 신뢰도 0.4를 넘으면 그려지는 것(가까울수록 신뢰도가 올라 결과적으로 잘
 잡히긴 함).
 
+**2026-11-18 갱신**: `config/settings.yaml`의 `perception.yolo_model_path`를
+`models/semih_yolov8n_ft.pt`(semih_world 사진으로 추가 학습한 YOLOv8n,
+`tools/yolo_finetune/README.md`)로 바꿨다. 구조·클래스 목록은 같고 가중치만
+다르다. 이 월드의 backpack/suitcase/chair 검출률(신뢰도 0.4, 학습에 안 쓴
+위치 325장)이 0.04/0.24/0.57 → 1.00/1.00/0.98. 다른 COCO 클래스·다른 월드·
+실제 카메라 성능은 확인하지 않았으므로 그런 환경에서는 `yolov8n.pt`로 되돌린다.
+확인: `node_runner.build_node_command()`가 새 경로를 넘기고, 그 명령으로
+target_3d를 띄우면 옛 모델이 못 잡던 위치(가방 기준 180°, 1.5m)에서 backpack을 검출함.
+
 ### 10-2. 구현: RViz 래퍼와 완전히 같은 패턴으로 image_view 3종 추가
 
 `rqt_image_view`가 이미 설치돼 있고(`/opt/ros/humble/lib/rqt_image_view/`),
