@@ -46,7 +46,11 @@ perception:
   # 'yolov8n.pt'(상대경로)라 CWD에 의존한다는 점이 semiH_ws/CLAUDE.md 섹션 2-6에
   # 기록돼 있음. core/node_runner.py의 _default_ros_args()가 여기 절대경로를
   # --ros-args -p model_name:=<이 값>으로 넘겨 그 의존성을 없앤다.
-  yolo_model_path: "/home/jangjunseo/semiH_ws/yolov8n.pt"
+  # 2026-11-18: semih_world 사진으로 추가 학습한 YOLOv8n으로 교체(tools/yolo_finetune/README.md).
+  # 이 월드의 가방·여행가방·의자 검출률이 크게 오른다(가방 4% -> 100%, 신뢰도 0.4 기준).
+  # 다른 COCO 클래스(사람 등)는 성능을 확인하지 않았으므로, 다른 월드/실제 카메라에서는
+  # 원래 모델 "/home/jangjunseo/semiH_ws/yolov8n.pt"로 되돌린다.
+  yolo_model_path: "/home/jangjunseo/semiH_ws/models/semih_yolov8n_ft.pt"
 
 logging:
   # semiH_web 자체 로그와, launch_runner/node_runner가 띄운 subprocess의

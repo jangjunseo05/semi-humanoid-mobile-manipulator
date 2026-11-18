@@ -2,7 +2,7 @@
 
 사전학습 YOLOv8n은 이 월드의 가방(`backpack_1`)을 대부분의 방향에서 suitcase/umbrella로 봅니다. 그래서 `target_classes:=backpack`으로는 원래 시작 위치 말고는 목표를 잡지 못했습니다(`docs/semiH_troubleshooting_log.md` 14절). 이 폴더는 Gazebo에서 사진을 자동으로 모으고 라벨을 만들어 YOLOv8n을 추가 학습하는 도구입니다.
 
-결과 가중치는 `models/semih_yolov8n_ft.pt`입니다. 클래스 이름은 COCO 80개를 그대로 쓰므로, 노드의 `target_classes` 설정은 바꾸지 않아도 됩니다.
+결과 가중치는 `models/semih_yolov8n_ft.pt`입니다. 웹 대시보드(semiH_web)도 2026-11-18부터 이 모델을 씁니다(`semiH_web/config/settings.yaml`의 `perception.yolo_model_path`). 다른 월드나 실제 카메라에서는 이 값을 `yolov8n.pt`로 되돌리세요. 클래스 이름은 COCO 80개를 그대로 쓰므로, 노드의 `target_classes` 설정은 바꾸지 않아도 됩니다.
 
 ```bash
 ros2 run semih_perception target_3d_node --ros-args \
