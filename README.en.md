@@ -50,8 +50,9 @@ linear motion).
   0.2); a contact sensor added later on the last arm link confirmed contact with the backpack in
   all 3 runs under the same conditions. The remaining ~2 cm is the link thickness (radius 1.6 cm).
   From 8 other start poses YOLOv8n labels this bag suitcase/umbrella, so the backpack-only setting
-  never locked a target; accepting those classes too, all 7 poses that locked made contact
-  (perception is the bottleneck).
+  never locked a target. A YOLOv8n fine-tuned on auto-labelled images of this world
+  (`models/semih_yolov8n_ft.pt`, `tools/yolo_finetune/`) detected the bag and made contact from
+  all 9 poses with the original backpack-only setting (a model specific to this world).
   No grasping. See `docs/usage_guide.md` section 4.
 
 ### `semih_data_collection` — dataset recording
