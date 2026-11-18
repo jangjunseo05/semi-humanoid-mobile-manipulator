@@ -49,6 +49,9 @@ linear motion).
   backpack surface point in 9 of 10 runs under identical conditions (YOLO confidence threshold
   0.2); a contact sensor added later on the last arm link confirmed contact with the backpack in
   all 3 runs under the same conditions. The remaining ~2 cm is the link thickness (radius 1.6 cm).
+  From 8 other start poses YOLOv8n labels this bag suitcase/umbrella, so the backpack-only setting
+  never locked a target; accepting those classes too, all 7 poses that locked made contact
+  (perception is the bottleneck).
   No grasping. See `docs/usage_guide.md` section 4.
 
 ### `semih_data_collection` — dataset recording
